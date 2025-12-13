@@ -1,5 +1,5 @@
-import ActionsDisplay from "./actionsDisplay";
-import GameBoard from "./gameboard";
+import ActionsDisplay from "./board/actionsDisplay";
+import GameBoard from "./board/gameboard";
 
 export default function Home() {
   return (

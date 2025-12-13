@@ -1,22 +1,21 @@
 import defaultBoard from "@/data/boards";
 import React from "react";
-import PlayersDisplay from "./playersDisplay";
+import PlayersDisplay from "./players/playersDisplay";
 
 export default function GameBoard() {
   const board = defaultBoard;
-  const streetsPerSide = board.length / 4 + 1;
-  console.log("streetsPerSide:", streetsPerSide);
+  const sPS = board.length / 4 + 1; // Streets Per Side
+  const sBC = sPS - 2; // Streets Between Corners
+  console.log("streetsPerSide:", sPS);
 
-  const top = board.slice(0, streetsPerSide);
-  const left = board.slice(streetsPerSide, streetsPerSide * 2 - 2).reverse();
-  const bottom = board
-    .slice(streetsPerSide * 2 - 2, streetsPerSide * 3 - 2)
-    .reverse();
-  const right = board.slice(streetsPerSide * 3 - 2, streetsPerSide * 4 - 4);
+  const top = board.slice(0, sPS);
+  const left = board.slice(sPS, sPS + sBC).reverse();
+  const bottom = board.slice(sPS + sBC, sPS * 2 + sBC).reverse();
+  const right = board.slice(sPS * 2 + sBC, sPS * 2 + sBC * 2);
 
   return (
     <div className="h-full w-full relative">
-      <PlayersDisplay streetsPerSide={streetsPerSide} />
+      <PlayersDisplay streetsPerSide={sPS} streetsBetweenCorners={sBC} />
       <div
         className="grid h-full w-full"
         style={{
