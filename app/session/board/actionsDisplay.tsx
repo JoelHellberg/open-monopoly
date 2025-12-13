@@ -1,10 +1,15 @@
 "use client";
+import Dice from "@/components/dice";
 import { useState } from "react";
 
 export default function ActionsDisplay() {
   const [showDiceRoll, setShowDiceRoll] = useState(true);
   return (
     <div className="absolute inset-0 m-auto flex flex-col gap-5 items-center justify-center z-10">
+      <div className="flex gap-5">
+        <Dice numberOfSides={5}/>
+        <Dice />
+      </div>
       {showDiceRoll ? <ThrowDice /> : <BuyProperty />}
 
       {/* For development, delete later */}

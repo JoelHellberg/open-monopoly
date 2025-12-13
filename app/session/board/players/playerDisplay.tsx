@@ -7,13 +7,10 @@ export default function PlayerDisplay(props: Props) {
   const playerPos = 0; // For testing, remove later
 
   const playerRow = getPlayerRow(playerPos, props.streetsPerSide);
-  console.log("playerRow:", playerRow);
   const streetWidth = 100 / (props.streetsPerSide + 2);
 
   const cornerPieces = getCornerPieces(props.streetsPerSide);
-  console.log("cornerPieces:", cornerPieces);
   const x = getPlayerPositionX(playerPos, cornerPieces, streetWidth, playerRow);
-  console.log("x:", x);
   const y = getPlayerPositionY(playerPos, cornerPieces, streetWidth, playerRow);
 
   return (
