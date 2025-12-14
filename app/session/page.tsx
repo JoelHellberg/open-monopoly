@@ -1,6 +1,8 @@
 import ActionsDisplay from "./board/actionsDisplay";
 import GameBoard from "./board/gameboard";
 import GameChat from "./chat/gameChat";
+import PropertyDisplay from "./propertiesDisplay";
+import TurnDisplay from "./turnDisplay";
 
 export default function Home() {
   return (
@@ -13,7 +15,12 @@ export default function Home() {
           <ActionsDisplay />
           <GameBoard />
         </div>
-        <div className="bg-blue-400 flex flex-1"></div>
+        <div className="bg-blue-400 flex flex-col flex-1 gap-5">
+          <TurnDisplay />
+          <div className="flex flex-col flex-2 bg-red-400 rounded-lg">
+            <PropertyDisplay />
+          </div>
+        </div>
       </main>
     </div>
   );
