@@ -15,7 +15,7 @@ export default function ActionsDisplay() {
       {/* For development, delete later */}
       <button
         onClick={() => setShowDiceRoll(!showDiceRoll)}
-        className="p-2 bg-white rounded-md shadow-md hover:bg-gray-200 hover:cursor-pointer"
+        className="p-2 text-black bg-white rounded-md shadow-md hover:bg-gray-200 hover:cursor-pointer"
       >
         Change
       </button>
@@ -25,7 +25,7 @@ export default function ActionsDisplay() {
 
 function ThrowDice() {
   return (
-    <button className="p-2 bg-white rounded-md shadow-md hover:bg-gray-200 hover:cursor-pointer">
+    <button className="p-2 text-black bg-white rounded-md shadow-md hover:bg-gray-200 hover:cursor-pointer">
       Throw Dice
     </button>
   );
@@ -34,10 +34,10 @@ function ThrowDice() {
 function BuyProperty() {
   return (
     <div className="flex gap-5">
-      <button className="p-2 bg-white rounded-md shadow-md hover:bg-gray-200 hover:cursor-pointer">
+      <button className="p-2 text-black bg-white rounded-md shadow-md hover:bg-gray-200 hover:cursor-pointer">
         Purchase
       </button>
-      <button className="p-2 bg-white rounded-md shadow-md hover:bg-gray-200 hover:cursor-pointer">
+      <button className="p-2 text-black bg-white rounded-md shadow-md hover:bg-gray-200 hover:cursor-pointer">
         Auction
       </button>
     </div>

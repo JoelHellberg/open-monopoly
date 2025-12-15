@@ -1,4 +1,5 @@
 import defaultBoard from "@/data/boards";
+import { propertyColors } from "@/data/colors";
 import React from "react";
 import PlayersDisplay from "./players/playersDisplay";
 
@@ -9,9 +10,9 @@ export default function GameBoard() {
   console.log("streetsPerSide:", sPS);
 
   const top = board.slice(0, sPS);
-  const left = board.slice(sPS, sPS + sBC).reverse();
+  const right = board.slice(sPS, sPS + sBC);
   const bottom = board.slice(sPS + sBC, sPS * 2 + sBC).reverse();
-  const right = board.slice(sPS * 2 + sBC, sPS * 2 + sBC * 2);
+  const left = board.slice(sPS * 2 + sBC, sPS * 2 + sBC * 2).reverse();
 
   return (
     <div className="h-full w-full relative">
@@ -63,10 +64,11 @@ function Tile({
 
   // Color strip orientation
   const isProperty = street.type === "property";
+  const colorClass = isProperty && street.color ? propertyColors[street.color] : "";
   const isHorizontal = side === "top" || side === "bottom";
   const strip = isHorizontal
-    ? { className: "w-full h-[20%] bg-blue-400 top-0 left-0" } // horizontal
-    : { className: "h-full w-[20%] bg-blue-400 left-0 top-0" }; // vertical
+    ? { className: "w-full h-[20%] top-0 left-0" } // horizontal
+    : { className: "h-full w-[20%] left-0 top-0" }; // vertical
 
   return (
     <div
@@ -75,7 +77,7 @@ function Tile({
     >
       {isProperty && (
         <>
-          <div className={`absolute ${strip.className}`} />
+          <div className={`absolute ${strip.className} ${colorClass}`} />
           <div
             className={
               "absolute aspect-square rounded-full bg-green-400 " +
@@ -89,7 +91,7 @@ function Tile({
 
       {/* Text counter-rotated so it stays readable */}
       <div
-        className="text-center overscroll-contain p-0.5"
+        className="text-center text-black overscroll-contain p-0.5"
         style={{
           whiteSpace: "normal",
           writingMode: `${isHorizontal ? "horizontal-tb" : "vertical-rl"}`,
