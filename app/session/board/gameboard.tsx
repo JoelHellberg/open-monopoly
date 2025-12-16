@@ -1,7 +1,9 @@
-import defaultBoard from "@/data/boards";
+import defaultBoard from "@/data/boards/default";
+import type { Tile as BoardTile, PropertyTile } from "@/types/board";
 import { propertyColors } from "@/data/colors";
 import React from "react";
 import PlayersDisplay from "./players/playersDisplay";
+
 
 export default function GameBoard() {
   const board = defaultBoard;
@@ -51,7 +53,7 @@ function Tile({
   street,
   side,
 }: {
-  street: any;
+  street: BoardTile;
   side: "top" | "right" | "bottom" | "left";
 }) {
   // Rotation based on side
@@ -64,7 +66,7 @@ function Tile({
 
   // Color strip orientation
   const isProperty = street.type === "property";
-  const colorClass = isProperty && street.color ? propertyColors[street.color] : "";
+  const colorClass = street.type === "property" ? propertyColors[street.color] : "";
   const isHorizontal = side === "top" || side === "bottom";
   const strip = isHorizontal
     ? { className: "w-full h-[20%] top-0 left-0" } // horizontal
@@ -74,6 +76,7 @@ function Tile({
     <div
       className="relative flex items-center justify-center border bg-white text-[8px] overflow-hidden rounded-sm"
       style={{ transform: `rotate(${rotation}deg)` }}
+      
     >
       {isProperty && (
         <>

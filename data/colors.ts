@@ -1,4 +1,6 @@
-export const propertyColors: Record<string, string> = {
+import { PropertyColor } from "@/types/board";
+
+export const propertyColors: Record<PropertyColor, string> = {
   brown: "bg-[#8B4513]",
   "light-blue": "bg-sky-400",
   pink: "bg-pink-400",
