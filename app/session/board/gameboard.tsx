@@ -4,7 +4,6 @@ import { propertyColors } from "@/data/colors";
 import React from "react";
 import PlayersDisplay from "./players/playersDisplay";
 
-
 export default function GameBoard() {
   const board = defaultBoard;
   const sPS = board.length / 4 + 1; // Streets Per Side
@@ -65,8 +64,10 @@ function Tile({
   }[side];
 
   // Color strip orientation
-  const isProperty = street.type === "property";
-  const colorClass = street.type === "property" ? propertyColors[street.color] : "";
+  const isOwnable = street.type === "ownable";
+  const isStreet = street.subtype === "street";
+  const colorClass =
+    street.subtype === "street" ? propertyColors[street.color] : "";
   const isHorizontal = side === "top" || side === "bottom";
   const strip = isHorizontal
     ? { className: "w-full h-[20%] top-0 left-0" } // horizontal
@@ -76,11 +77,12 @@ function Tile({
     <div
       className="relative flex items-center justify-center border bg-white text-[8px] overflow-hidden rounded-sm"
       style={{ transform: `rotate(${rotation}deg)` }}
-      
     >
-      {isProperty && (
+      {isOwnable && (
         <>
-          <div className={`absolute ${strip.className} ${colorClass}`} />
+          {isStreet && (
+            <div className={`absolute ${strip.className} ${colorClass}`} />
+          )}
           <div
             className={
               "absolute aspect-square rounded-full bg-green-400 " +
