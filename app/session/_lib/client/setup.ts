@@ -15,7 +15,7 @@ export async function hostGame(board: Tile[]) {
     diceTwo: 1,
     host: hostPlayerId,
     currentPlayer: 0,
-    playersInSession: [hostPlayerId],
+    playersInSession: [],
     gameIsOn: false,
   };
 
@@ -38,5 +38,5 @@ export async function hostGame(board: Tile[]) {
     }
   }
 
-  window.location.href = "/session";
+  window.location.href = "/session/" + sessionId;
 }
