@@ -1,29 +1,69 @@
+"use client";
+
+import { db } from "@/app/_lib/firebase";
+import { Player } from "@/types/gameTypes";
+import { doc, onSnapshot } from "firebase/firestore";
+import { useParams } from "next/navigation";
+import { useEffect, useState } from "react";
+
 type Props = {
+  playerId_in: string;
   streetsPerSide: number;
   streetsBetweenCorners: number;
 };
 
 export default function PlayerDisplay(props: Props) {
-  const playerPos = 0; // For testing, remove later
+  const params = useParams();
+  const sessionId = params.sessionId as string;
+  const [playerData, setPlayerData] = useState<Player | null>(null);
 
-  const playerRow = getPlayerRow(playerPos, props.streetsPerSide);
+  useEffect(() => {
+    const unsub = onSnapshot(
+      doc(db, "gameData", sessionId, "players", props.playerId_in),
+      (snapshot) => {
+        if (snapshot.exists()) {
+          const data = snapshot.data() as Player;
+          setPlayerData(data);
+        }
+      }
+    );
+
+    return () => unsub(); // Clean up listener on unmount
+  }, []);
+
+  if (!playerData) return null;
+
+  const playerRow = getPlayerRow(playerData.pos, props.streetsPerSide);
   const streetWidth = 100 / (props.streetsPerSide + 2);
 
   const cornerPieces = getCornerPieces(props.streetsPerSide);
-  const x = getPlayerPositionX(playerPos, cornerPieces, streetWidth, playerRow);
-  const y = getPlayerPositionY(playerPos, cornerPieces, streetWidth, playerRow);
+  const x = getPlayerPositionX(
+    playerData.pos,
+    cornerPieces,
+    streetWidth,
+    playerRow
+  );
+  const y = getPlayerPositionY(
+    playerData.pos,
+    cornerPieces,
+    streetWidth,
+    playerRow
+  );
 
   return (
-    <div
-      className="absolute bg-red-500 rounded-full z-30"
-      style={{
-        width: "2%",
-        height: "2%",
-        top: `${y}%`,
-        left: `${x}%`,
-        transform: "translate(-50%, -50%)",
-      }}
-    ></div>
+    <>
+      <div
+        className="absolute bg-red-500 rounded-full z-30"
+        style={{
+          width: "2%",
+          height: "2%",
+          top: `${y}%`,
+          left: `${x}%`,
+          backgroundColor: `#${playerData.color}`,
+          transform: "translate(-50%, -50%)",
+        }}
+      ></div>
+    </>
   );
 }
 

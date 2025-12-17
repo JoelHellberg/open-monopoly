@@ -1,11 +1,32 @@
+"use client";
+import { useEffect } from "react";
 import ActionsDisplay from "../board/actionsDisplay";
 import GameBoard from "../board/gameboard";
 import GameChat from "../chat/gameChat";
 import PropertiesDisplay from "../propertiesDisplay";
 import TurnDisplay from "../turnDisplay";
-
+import { doc, onSnapshot } from "firebase/firestore";
+import { useGameData } from "../_lib/data/gameData";
+import { GameData } from "@/types/gameTypes";
+import { useParams } from "next/navigation";
+import { db } from "@/app/_lib/firebase";
 
 export default function SessionPage() {
+  const params = useParams();
+  const sessionId = params.sessionId as string;
+  const updateGameData = useGameData((state) => state.update);
+
+  useEffect(() => {
+    const unsub = onSnapshot(doc(db, "gameData", sessionId), (snapshot) => {
+      if (snapshot.exists()) {
+        const data = snapshot.data() as GameData;
+        updateGameData(data);
+      }
+    });
+
+    return () => unsub(); // Clean up listener on unmount
+  }, []);
+
   return (
     <div className="flex min-h-screen min-w-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
       <main className="flex h-screen w-screen gap-3 p-2 [&>div]:rounded-lg">
