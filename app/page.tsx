@@ -1,5 +1,4 @@
 "use client"
-import Image from "next/image";
 import { hostGame } from "./session/_lib/client/setup";
 import defaultBoard from "@/data/boards/default";
 

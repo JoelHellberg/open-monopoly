@@ -2,6 +2,7 @@ import { Tile } from "@/types/board";
 import { GameData } from "@/types/gameTypes";
 import {
   addCompanyToGame,
+  addGameDataToDB,
   addPlayerToGame,
   addPropertyToGame,
   addTransportToGame,
@@ -17,23 +18,25 @@ export async function hostGame(board: Tile[]) {
     playersInSession: [hostPlayerId],
     gameIsOn: false,
   };
-  await addPlayerToGame(hostPlayerId);
+
+  const sessionId = await addGameDataToDB(gameData);
+  await addPlayerToGame(hostPlayerId, sessionId);
 
   for (const street of board) {
     if (street.type === "ownable") {
       switch (street.subtype) {
         case "property":
-          await addPropertyToGame(street);
+          await addPropertyToGame(street, sessionId);
           break;
         case "transportation":
-          await addTransportToGame(street);
+          await addTransportToGame(street, sessionId);
           break;
         case "company":
-          await addCompanyToGame(street);
+          await addCompanyToGame(street, sessionId);
           break;
       }
     }
   }
-  
-  window.location.href = "/session"
+
+  window.location.href = "/session";
 }
