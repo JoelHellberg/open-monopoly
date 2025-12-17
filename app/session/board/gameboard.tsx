@@ -65,9 +65,9 @@ function Tile({
 
   // Color strip orientation
   const isOwnable = street.type === "ownable";
-  const isStreet = street.subtype === "street";
+  const isStreet = street.subtype === "property";
   const colorClass =
-    street.subtype === "street" ? propertyColors[street.color] : "";
+    street.subtype === "property" ? propertyColors[street.color] : "";
   const isHorizontal = side === "top" || side === "bottom";
   const strip = isHorizontal
     ? { className: "w-full h-[20%] top-0 left-0" } // horizontal

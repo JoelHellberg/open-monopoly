@@ -16,7 +16,7 @@ export interface BaseTile {
 
 export interface PropertyTile extends BaseTile {
   type: "ownable";
-  subtype: "street";
+  subtype: "property";
   color: PropertyColor;
   price: number;
   houseCost: number;
