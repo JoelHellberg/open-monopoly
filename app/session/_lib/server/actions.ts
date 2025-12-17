@@ -1,6 +1,7 @@
 "use server"
 
 import { getFirestoreAdmin } from "@/app/_lib/firebaseAdmin";
+import defaultBoard from "@/data/boards/default";
 
 export async function throwDice(sessionId: string, playerId: string) {
   const db = await getFirestoreAdmin();
@@ -31,10 +32,11 @@ export async function throwDice(sessionId: string, playerId: string) {
 
   const playerData = playerSnapshot.data();
   const currentPos = playerData?.pos ?? 0;
+  const board = defaultBoard;
 
   // Update player position
   await playerDocRef.update({
-    pos: currentPos + playerMovement,
+    pos: (currentPos + playerMovement) % (board.length - 1),
   });
 }
 
