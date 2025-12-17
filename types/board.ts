@@ -11,10 +11,12 @@ export interface BaseTile {
   id: number;
   name: string;
   type: string;
+  subtype: string;
 }
 
 export interface PropertyTile extends BaseTile {
-  type: "property";
+  type: "ownable";
+  subtype: "street";
   color: PropertyColor;
   price: number;
   houseCost: number;
@@ -29,32 +31,38 @@ export interface PropertyTile extends BaseTile {
 }
 
 export interface RailroadTile extends BaseTile {
-  type: "railroad";
+  type: "ownable";
+  subtype: "transportation";
   price: number;
   rent: number[]; // indexed by owned railroads
 }
 
 export interface UtilityTile extends BaseTile {
-  type: "utility";
+  type: "ownable";
+  subtype: "company";
   price: number;
   multiplier: number[]; // dice multiplier
 }
 
-export interface CornerTile extends BaseTile {
-  type: "corner";
+export interface EventTile extends BaseTile {
+  type: "event";
 }
 
-export interface TaxTile extends BaseTile {
-  type: "tax";
+export interface CornerTile extends EventTile {
+  subtype: "go" | "jail" | "parking" | "toJail";
+}
+
+export interface TaxTile extends EventTile {
+  subtype: "tax";
   amount: number;
 }
 
-export interface ChanceTile extends BaseTile {
-  type: "chance";
+export interface ChanceTile extends EventTile {
+  subtype: "chance";
 }
 
-export interface ChestTile extends BaseTile {
-  type: "chest";
+export interface ChestTile extends EventTile {
+  subtype: "chest";
 }
 
 export type PropertyColor =
