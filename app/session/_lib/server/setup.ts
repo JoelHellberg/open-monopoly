@@ -1,6 +1,5 @@
 "use server";
-import { getFirestoreAdmin } from "@/app/_lib/firebaseAdmin";
-import { FieldValue } from "firebase-admin/firestore";
+import { getRTDBAdmin } from "@/app/_lib/firebaseAdmin";
 import { PropertyTile, RailroadTile, UtilityTile } from "@/types/board";
 import { GameData, Ownable, Player } from "@/types/gameTypes";
 
@@ -12,16 +11,16 @@ function generateRandomId(length: number): string {
 }
 
 export async function addGameDataToDB(gameData: GameData): Promise<string> {
-  const db = await getFirestoreAdmin();
+  const rtdb = await getRTDBAdmin();
   const gameId = generateRandomId(6);
 
-  await db.collection("gameData").doc(gameId).create(gameData);
+  await rtdb.ref(`games/${gameId}`).set(gameData);
 
   return gameId;
 }
 
 export async function addPlayerToGame(userId: string, sessionId: string) {
-  const db = await getFirestoreAdmin();
+  const rtdb = await getRTDBAdmin();
   const playerData: Player = {
     money: 0,
     ownables: [],
@@ -30,26 +29,14 @@ export async function addPlayerToGame(userId: string, sessionId: string) {
     color: "",
   };
 
-  await db
-    .collection("gameData")
-    .doc(sessionId)
-    .collection("players")
-    .doc(userId)
-    .create(playerData);
-
-  await db
-    .collection("gameData")
-    .doc(sessionId)
-    .update({
-      playersInSession: FieldValue.arrayUnion(userId),
-    });
+  await rtdb.ref(`games/${sessionId}/players/${userId}`).set(playerData);
+  await rtdb.ref(`games/${sessionId}/playersInSession/${userId}`).set(true);
 }
 
 export async function addPropertyToGame(
   street: PropertyTile,
   sessionId: string
 ) {
-  const db = await getFirestoreAdmin();
   const ownableData: Ownable = {
     type: "property",
     familyMembers: [],
@@ -58,19 +45,13 @@ export async function addPropertyToGame(
     cost: street.houseCost,
     rent: street.rent,
   };
-  await db
-    .collection("gameData")
-    .doc(sessionId)
-    .collection("ownables")
-    .doc(street.name)
-    .create(ownableData);
+  addOwnableToGame(ownableData, street.name, sessionId);
 }
 
 export async function addTransportToGame(
   street: RailroadTile,
   sessionId: string
 ) {
-  const db = await getFirestoreAdmin();
   const ownableData: Ownable = {
     type: "transportation",
     familyMembers: [],
@@ -79,16 +60,10 @@ export async function addTransportToGame(
     cost: 0,
     rent: street.rent,
   };
-  await db
-    .collection("gameData")
-    .doc(sessionId)
-    .collection("ownables")
-    .doc(street.name)
-    .create(ownableData);
+  addOwnableToGame(ownableData, street.name, sessionId);
 }
 
 export async function addCompanyToGame(street: UtilityTile, sessionId: string) {
-  const db = await getFirestoreAdmin();
   const ownableData: Ownable = {
     type: "company",
     familyMembers: [],
@@ -97,10 +72,14 @@ export async function addCompanyToGame(street: UtilityTile, sessionId: string) {
     cost: 0,
     rent: street.multiplier,
   };
-  await db
-    .collection("gameData")
-    .doc(sessionId)
-    .collection("ownables")
-    .doc(street.name)
-    .create(ownableData);
+  addOwnableToGame(ownableData, street.name, sessionId);
+}
+
+export async function addOwnableToGame(
+  ownableData: Ownable,
+  streetName: string,
+  sessionId: string
+) {
+  const rtdb = await getRTDBAdmin();
+  await rtdb.ref(`games/${sessionId}/ownables/${streetName}`).set(ownableData);
 }

@@ -5,11 +5,11 @@ import GameBoard from "../board/gameboard";
 import GameChat from "../chat/gameChat";
 import PropertiesDisplay from "../propertiesDisplay";
 import TurnDisplay from "../turnDisplay";
-import { doc, onSnapshot } from "firebase/firestore";
 import { useGameData } from "../_lib/data/gameData";
 import { GameData } from "@/types/gameTypes";
 import { useParams } from "next/navigation";
-import { db } from "@/app/_lib/firebase";
+import { onValue, ref, off } from "firebase/database";
+import { rtdb } from "@/app/_lib/firebase";
 
 export default function SessionPage() {
   const params = useParams();
@@ -17,15 +17,24 @@ export default function SessionPage() {
   const updateGameData = useGameData((state) => state.update);
 
   useEffect(() => {
-    const unsub = onSnapshot(doc(db, "gameData", sessionId), (snapshot) => {
+    if (!sessionId) return;
+
+    const gameRef = ref(rtdb, `games/${sessionId}`);
+
+    const unsubscribe = onValue(gameRef, (snapshot) => {
       if (snapshot.exists()) {
-        const data = snapshot.data() as GameData;
-        updateGameData(data);
+        const data = snapshot.val();
+        const playersArray = data.playersInSession
+          ? Object.keys(data.playersInSession)
+          : [];
+
+        const updatedData = { ...data, playersInSession: playersArray };
+        updateGameData(updatedData);
       }
     });
 
-    return () => unsub(); // Clean up listener on unmount
-  }, []);
+    return unsubscribe;
+  }, [sessionId]);
 
   return (
     <div className="flex min-h-screen min-w-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">

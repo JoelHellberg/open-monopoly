@@ -1,43 +1,43 @@
 "use server";
 
-import { getFirestoreAdmin } from "@/app/_lib/firebaseAdmin";
+import { getRTDBAdmin } from "@/app/_lib/firebaseAdmin";
 import defaultBoard from "@/data/boards/default";
 import { processLanding } from "./gameLogic";
 
 export async function throwDice(sessionId: string, playerId: string) {
-  const db = await getFirestoreAdmin();
+  const rtdb = await getRTDBAdmin();
 
   // Roll the dice
   const diceOne = Math.floor(Math.random() * 6) + 1;
   const diceTwo = Math.floor(Math.random() * 6) + 1;
   const playerMovement = diceOne + diceTwo;
 
-  // Update dice values in the gameData document
-  await db.collection("gameData").doc(sessionId).update({
-    diceOne: diceOne,
-    diceTwo: diceTwo,
+  // Update dice values in the gameData node
+  const gameRef = rtdb.ref(`games/${sessionId}`);
+  await gameRef.update({
+    diceOne,
+    diceTwo,
   });
 
   // Get current player position
-  const playerDocRef = db
-    .collection("gameData")
-    .doc(sessionId)
-    .collection("players")
-    .doc(playerId);
+  const playerRef = rtdb.ref(`games/${sessionId}/players/${playerId}`);
+  const playerSnapshot = await playerRef.get();
 
-  const playerSnapshot = await playerDocRef.get();
-  if (!playerSnapshot.exists) throw new Error("Player not found");
+  if (!playerSnapshot.exists()) throw new Error("Player not found");
 
-  const playerData = playerSnapshot.data();
-  const currentPos = playerData?.pos ?? 0;
-  const board = defaultBoard;
+  const playerData = playerSnapshot.val();
+  const currentPos = playerData.pos ?? 0;
+
+  // Calculate new player position
+  const newPlayerPos =
+    (currentPos + playerMovement) % (defaultBoard.length - 1);
 
   // Update player position
-  const newPlayerPos = (currentPos + playerMovement) % (board.length - 1);
-  await playerDocRef.update({
+  await playerRef.update({
     pos: newPlayerPos,
   });
 
+  // Call your landing logic
   await processLanding(playerId, sessionId, newPlayerPos);
 }
 
