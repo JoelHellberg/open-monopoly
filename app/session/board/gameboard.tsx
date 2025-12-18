@@ -1,8 +1,13 @@
+"use client";
 import defaultBoard from "@/data/boards/default";
 import type { Tile as BoardTile, PropertyTile } from "@/types/board";
 import { propertyColors } from "@/data/colors";
-import React from "react";
+import React, { useEffect, useState } from "react";
 import PlayersDisplay from "./players/playersDisplay";
+import { useParams } from "next/navigation";
+import { Ownable } from "@/types/gameTypes";
+import { rtdb } from "@/app/_lib/firebase";
+import { onValue, ref } from "firebase/database";
 
 export default function GameBoard() {
   const board = defaultBoard;
@@ -63,6 +68,25 @@ function Tile({
     left: 180,
   }[side];
 
+  const params = useParams();
+  const sessionId = params.sessionId as string;
+  const [ownableData, setOwnableData] = useState<Ownable | null>(null);
+
+  useEffect(() => {
+    if (!sessionId) return;
+
+    const gameRef = ref(rtdb, `games/${sessionId}/ownables/${street.name}`);
+
+    const unsubscribe = onValue(gameRef, (snapshot) => {
+      if (snapshot.exists()) {
+        const data = snapshot.val() as Ownable;
+        setOwnableData(data);
+      }
+    });
+
+    return unsubscribe;
+  }, [sessionId]);
+
   // Color strip orientation
   const isOwnable = street.type === "ownable";
   const isStreet = street.subtype === "property";
@@ -83,15 +107,17 @@ function Tile({
           {isStreet && (
             <div className={`absolute ${strip.className} ${colorClass}`} />
           )}
-          <div
-            className={
-              "absolute aspect-square rounded-full " +
-              (isHorizontal
-                ? "w-1/3 top-0 -translate-y-1/2"
-                : "h-2/5 left-0 -translate-x-1/2")
-            }
-            style={{backgroundColor: `#${"00FF00"}`}}
-          />
+          {ownableData && ownableData.owner != "" && (
+            <div
+              className={
+                "absolute aspect-square rounded-full " +
+                (isHorizontal
+                  ? "w-1/3 top-0 -translate-y-1/2"
+                  : "h-2/5 left-0 -translate-x-1/2")
+              }
+              style={{ backgroundColor: `#${"00FF00"}` }}
+            />
+          )}
         </>
       )}
 

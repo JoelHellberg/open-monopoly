@@ -3,6 +3,7 @@
 import { getRTDBAdmin } from "@/app/_lib/firebaseAdmin";
 import defaultBoard from "@/data/boards/default";
 import { processLanding } from "./gameLogic";
+import { Ownable, Player } from "@/types/gameTypes";
 
 export async function throwDice(sessionId: string, playerId: string) {
   const rtdb = await getRTDBAdmin();
@@ -41,7 +42,41 @@ export async function throwDice(sessionId: string, playerId: string) {
   await processLanding(playerId, sessionId, newPlayerPos);
 }
 
-export async function purchase(sessionId: string, playerId: string) {}
+export async function purchase(sessionId: string, playerId: string) {
+  const rtdb = await getRTDBAdmin();
+
+  // Get player data
+  const playerRef = rtdb.ref(`games/${sessionId}/players/${playerId}`);
+  const playerSnapshot = await playerRef.get();
+  if (!playerSnapshot.exists()) {
+    throw new Error("Player not found");
+  }
+  const playerData: Player = playerSnapshot.val();
+
+  // Ensure ownables array exists
+  if (!Array.isArray(playerData.ownables)) {
+    playerData.ownables = [];
+  }
+
+  // Get the ownable for the player's current position
+  const ownableName = defaultBoard[playerData.pos].name;
+  const ownableRef = rtdb.ref(`games/${sessionId}/ownables/${ownableName}`);
+  const ownableSnapshot = await ownableRef.get();
+  if (!ownableSnapshot.exists()) {
+    throw new Error("Ownable not found");
+  }
+  const ownableData: Ownable = ownableSnapshot.val();
+
+  // Update local objects
+  playerData.ownables.push(ownableName);
+  ownableData.owner = playerId;
+
+  // Write updates back to the database
+  await playerRef.set(playerData);
+  await ownableRef.set(ownableData);
+}
+
+
 
 export async function auction() {}
 

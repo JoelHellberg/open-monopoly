@@ -29,7 +29,7 @@ export const defaultBoard: Tile[] = [
 
   { id: 11, name: "Jail / Just Visiting", type: "event", subtype: "jail" },
 
-  { id: 12, name: "St. Charles Place", type: "ownable", subtype: "property", color: "pink",
+  { id: 12, name: "St Charles Place", type: "ownable", subtype: "property", color: "pink",
     price: 140, houseCost: 100, rent: [10, 50, 150, 450, 625, 750], },
 
   { id: 13, name: "Electric Company", type: "ownable", subtype: "company",
@@ -44,7 +44,7 @@ export const defaultBoard: Tile[] = [
   { id: 16, name: "Pennsylvania Railroad", type: "ownable", subtype: "transportation",
     price: 200, rent: [25, 50, 100, 200], },
 
-  { id: 17, name: "St. James Place", type: "ownable", subtype: "property", color: "orange",
+  { id: 17, name: "St James Place", type: "ownable", subtype: "property", color: "orange",
     price: 180, houseCost: 100, rent: [14, 70, 200, 550, 750, 950], },
 
   { id: 18, name: "Community Chest", type: "event", subtype: "chest" },
@@ -68,7 +68,7 @@ export const defaultBoard: Tile[] = [
   { id: 25, name: "Illinois Avenue", type: "ownable", subtype: "property", color: "red",
     price: 240, houseCost: 150, rent: [20, 100, 300, 750, 925, 1100], },
 
-  { id: 26, name: "B. & O. Railroad", type: "ownable", subtype: "transportation",
+  { id: 26, name: "B & O Railroad", type: "ownable", subtype: "transportation",
     price: 200, rent: [25, 50, 100, 200], },
 
   { id: 27, name: "Atlantic Avenue", type: "ownable", subtype: "property", color: "yellow",

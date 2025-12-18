@@ -2,7 +2,7 @@
 import Dice from "@/components/dice";
 import { useState } from "react";
 import { useGameData } from "../_lib/data/gameData";
-import { throwDice } from "../_lib/server/actions";
+import { purchase, throwDice } from "../_lib/server/actions";
 import { useParams } from "next/navigation";
 
 export default function ActionsDisplay() {
@@ -41,9 +41,12 @@ function ThrowDice() {
 }
 
 function BuyProperty() {
+    const params = useParams();
+  const sessionId = params.sessionId as string;
   return (
     <div className="flex gap-5">
-      <button className="p-2 text-black bg-white rounded-md shadow-md hover:bg-gray-200 hover:cursor-pointer">
+      <button className="p-2 text-black bg-white rounded-md shadow-md hover:bg-gray-200 hover:cursor-pointer"
+      onClick={() => purchase(sessionId, "aa")}>
         Purchase
       </button>
       <button className="p-2 text-black bg-white rounded-md shadow-md hover:bg-gray-200 hover:cursor-pointer">
