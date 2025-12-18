@@ -1,5 +1,6 @@
 import { initializeApp, getApps, getApp } from "firebase/app";
 import { getAuth } from "firebase/auth";
+import { getDatabase } from "firebase/database";
 import { getFirestore } from "firebase/firestore";
 // import { getAnalytics } from "firebase/analytics";
 
@@ -8,6 +9,7 @@ const firebaseConfig = {
   authDomain: "monopolywebgame.firebaseapp.com",
   projectId: "monopolywebgame",
   storageBucket: "monopolywebgame.firebasestorage.app",
+  databaseURL: "https://monopolywebgame-default-rtdb.europe-west1.firebasedatabase.app",
   messagingSenderId: "209693199500",
   appId: "1:209693199500:web:5fdee3c9bec72b3afabfa9",
   measurementId: "G-PEE18SJ7RQ"
@@ -20,4 +22,5 @@ export const app = !getApps().length
 
 export const auth = getAuth(app);
 export const db = getFirestore(app);
+export const rtdb = getDatabase(app);
 // export const analytics = typeof window !== "undefined" ? getAnalytics(app) : null;

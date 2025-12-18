@@ -85,11 +85,12 @@ function Tile({
           )}
           <div
             className={
-              "absolute aspect-square rounded-full bg-green-400 " +
+              "absolute aspect-square rounded-full " +
               (isHorizontal
                 ? "w-1/3 top-0 -translate-y-1/2"
                 : "h-2/5 left-0 -translate-x-1/2")
             }
+            style={{backgroundColor: `#${"00FF00"}`}}
           />
         </>
       )}

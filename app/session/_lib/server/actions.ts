@@ -1,7 +1,8 @@
-"use server"
+"use server";
 
 import { getFirestoreAdmin } from "@/app/_lib/firebaseAdmin";
 import defaultBoard from "@/data/boards/default";
+import { processLanding } from "./gameLogic";
 
 export async function throwDice(sessionId: string, playerId: string) {
   const db = await getFirestoreAdmin();
@@ -12,13 +13,10 @@ export async function throwDice(sessionId: string, playerId: string) {
   const playerMovement = diceOne + diceTwo;
 
   // Update dice values in the gameData document
-  await db
-    .collection("gameData")
-    .doc(sessionId)
-    .update({
-      diceOne: diceOne,
-      diceTwo: diceTwo,
-    });
+  await db.collection("gameData").doc(sessionId).update({
+    diceOne: diceOne,
+    diceTwo: diceTwo,
+  });
 
   // Get current player position
   const playerDocRef = db
@@ -35,10 +33,18 @@ export async function throwDice(sessionId: string, playerId: string) {
   const board = defaultBoard;
 
   // Update player position
+  const newPlayerPos = (currentPos + playerMovement) % (board.length - 1);
   await playerDocRef.update({
-    pos: (currentPos + playerMovement) % (board.length - 1),
+    pos: newPlayerPos,
   });
+
+  await processLanding(playerId, sessionId, newPlayerPos);
 }
 
+export async function purchase(sessionId: string, playerId: string) {}
 
-export async function purchase() {}
+export async function auction() {}
+
+export async function bidAuction() {}
+
+export async function endTurn() {}
