@@ -7,9 +7,12 @@ import {
   addPropertyToGame,
   addTransportToGame,
 } from "../server/setup";
+import { createGameSession, verifySession } from "@/app/_lib/session";
 
 export async function hostGame(board: Tile[]) {
-  const hostPlayerId: string = "aa";
+  const { userId: playerId } = await verifySession();
+  const hostPlayerId = playerId as string;
+  
   const gameData: GameData = {
     diceOne: 1,
     diceTwo: 1,
@@ -38,5 +41,6 @@ export async function hostGame(board: Tile[]) {
     }
   }
 
+  await createGameSession(hostPlayerId)
   window.location.href = "/session/" + sessionId;
 }

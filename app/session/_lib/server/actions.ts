@@ -4,8 +4,18 @@ import { getRTDBAdmin } from "@/app/_lib/firebaseAdmin";
 import defaultBoard from "@/data/boards/default";
 import { processLanding } from "./gameLogic";
 import { Ownable, Player } from "@/types/gameTypes";
+import { assertPlayerActionAllowed, getPlayerId, updatePlayerStatus } from "./helperFunctions";
+import {
+  fetchOwnableData,
+  fetchPlayerData,
+  updateOwnableData,
+  updatePlayerData,
+} from "./database";
 
-export async function throwDice(sessionId: string, playerId: string) {
+export async function throwDice(sessionId: string) {
+  if (!(await assertPlayerActionAllowed("THROW_DICE", sessionId))) return;
+
+  const playerId: string = await getPlayerId();
   const rtdb = await getRTDBAdmin();
 
   // Roll the dice
@@ -39,44 +49,33 @@ export async function throwDice(sessionId: string, playerId: string) {
   });
 
   // Call your landing logic
-  await processLanding(playerId, sessionId, newPlayerPos);
+  await processLanding(sessionId, newPlayerPos);
 }
 
-export async function purchase(sessionId: string, playerId: string) {
-  const rtdb = await getRTDBAdmin();
+export async function purchase(sessionId: string) {
+  if (!(await assertPlayerActionAllowed("BUY_PROPERTY", sessionId))) return;
 
-  // Get player data
-  const playerRef = rtdb.ref(`games/${sessionId}/players/${playerId}`);
-  const playerSnapshot = await playerRef.get();
-  if (!playerSnapshot.exists()) {
-    throw new Error("Player not found");
-  }
-  const playerData: Player = playerSnapshot.val();
+  const playerId: string = await getPlayerId();
+  const playerData: Player = await fetchPlayerData(playerId, sessionId);
 
   // Ensure ownables array exists
   if (!Array.isArray(playerData.ownables)) {
     playerData.ownables = [];
   }
-
   // Get the ownable for the player's current position
-  const ownableName = defaultBoard[playerData.pos].name;
-  const ownableRef = rtdb.ref(`games/${sessionId}/ownables/${ownableName}`);
-  const ownableSnapshot = await ownableRef.get();
-  if (!ownableSnapshot.exists()) {
-    throw new Error("Ownable not found");
-  }
-  const ownableData: Ownable = ownableSnapshot.val();
+  const ownableId = defaultBoard[playerData.pos].name;
+  const ownableData: Ownable = await fetchOwnableData(ownableId, sessionId);
 
   // Update local objects
-  playerData.ownables.push(ownableName);
+  playerData.ownables.push(ownableId);
   ownableData.owner = playerId;
 
   // Write updates back to the database
-  await playerRef.set(playerData);
-  await ownableRef.set(ownableData);
+  await updatePlayerData(playerId, sessionId, playerData);
+  await updateOwnableData(ownableId, sessionId, ownableData);
+
+  updatePlayerStatus(sessionId);
 }
-
-
 
 export async function auction() {}
 

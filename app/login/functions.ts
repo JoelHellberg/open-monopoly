@@ -17,7 +17,7 @@ export async function signInWithGoogle() {
 
     const token = credential?.accessToken;
     const user = result.user;
-    if (user.email) await createSession(user.email);
+    if (user.uid) await createSession(user.uid);
     window.location.href = "/";
 
     console.log(user);

@@ -33,7 +33,7 @@ function ThrowDice() {
   return (
     <button
       className="p-2 text-black bg-white rounded-md shadow-md hover:bg-gray-200 hover:cursor-pointer"
-      onClick={() => throwDice(sessionId, "aa")}
+      onClick={() => throwDice(sessionId)}
     >
       Throw Dice
     </button>
@@ -41,12 +41,14 @@ function ThrowDice() {
 }
 
 function BuyProperty() {
-    const params = useParams();
+  const params = useParams();
   const sessionId = params.sessionId as string;
   return (
     <div className="flex gap-5">
-      <button className="p-2 text-black bg-white rounded-md shadow-md hover:bg-gray-200 hover:cursor-pointer"
-      onClick={() => purchase(sessionId, "aa")}>
+      <button
+        className="p-2 text-black bg-white rounded-md shadow-md hover:bg-gray-200 hover:cursor-pointer"
+        onClick={() => purchase(sessionId)}
+      >
         Purchase
       </button>
       <button className="p-2 text-black bg-white rounded-md shadow-md hover:bg-gray-200 hover:cursor-pointer">

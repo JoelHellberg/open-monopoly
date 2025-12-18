@@ -6,7 +6,6 @@ import GameChat from "../chat/gameChat";
 import PropertiesDisplay from "../propertiesDisplay";
 import TurnDisplay from "../turnDisplay";
 import { useGameData } from "../_lib/data/gameData";
-import { GameData } from "@/types/gameTypes";
 import { useParams } from "next/navigation";
 import { onValue, ref, off } from "firebase/database";
 import { rtdb } from "@/app/_lib/firebase";
