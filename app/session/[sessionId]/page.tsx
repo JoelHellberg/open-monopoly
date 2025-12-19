@@ -12,10 +12,12 @@ import { rtdb } from "@/app/_lib/firebase";
 import { GameDataRTDB } from "@/types/databaseTypes";
 import { normalizeGameData } from "../_lib/client/helperFunctions";
 import { GameData } from "@/types/gameTypes";
+import Settings from "../settings";
 
 export default function SessionPage() {
   const params = useParams();
   const sessionId = params.sessionId as string;
+  const gameData = useGameData((state) => state.data);
   const updateGameData = useGameData((state) => state.update);
 
   useEffect(() => {
@@ -45,7 +47,11 @@ export default function SessionPage() {
         <div className="bg-blue-400 flex flex-col flex-1 gap-5">
           <TurnDisplay />
           <div className="flex flex-col flex-2 bg-red-400 rounded-lg">
-            <PropertiesDisplay />
+            {gameData && gameData.gameIsOn ? (
+              <PropertiesDisplay />
+            ) : (
+              <Settings />
+            )}
           </div>
         </div>
       </main>

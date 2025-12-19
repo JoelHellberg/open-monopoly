@@ -22,7 +22,7 @@ export async function addGameDataToDB(gameData: GameData): Promise<string> {
 export async function addPlayerToGame(userId: string, sessionId: string) {
   const rtdb = await getRTDBAdmin();
   const playerData: Player = {
-    money: 0,
+    money: 1000,
     ownables: [],
     pos: 0,
     status: "",

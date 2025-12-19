@@ -2,7 +2,7 @@
 
 import { getRTDBAdmin } from "@/app/_lib/firebaseAdmin";
 import defaultBoard from "@/data/boards/default";
-import { processLanding } from "./gameLogic";
+import { endPlayersTurn, processLanding, startPlayersTurn } from "./gameLogic";
 import { GameData, Ownable, Player } from "@/types/gameTypes";
 import {
   assertPlayerActionAllowed,
@@ -17,6 +17,19 @@ import {
   updateOwnableData,
   updatePlayerData,
 } from "./database";
+
+export async function startGame(sessionId: string) {
+  const playerId: string = await getPlayerId();
+  const gameData: GameData = await fetchGameData(sessionId);
+
+  // Make sure the player trying to start is the host!
+  if (playerId === gameData.host) {
+    gameData.gameIsOn = true;
+    await updateGameData(sessionId, gameData);
+    const firstPlayersId = gameData.playersInSession[gameData.currentPlayer];
+    await startPlayersTurn(sessionId, firstPlayersId);
+  }
+}
 
 export async function throwDice(sessionId: string) {
   if (!(await assertPlayerActionAllowed("THROW_DICE", sessionId))) return;
@@ -88,15 +101,8 @@ export async function auction() {}
 export async function bidAuction() {}
 
 export async function endTurn(sessionId: string) {
+  if (!(await assertPlayerActionAllowed("END_TURN", sessionId))) return;
+
   const currentPlayerId: string = await getPlayerId();
-  await updatePlayerStatus(sessionId, currentPlayerId);
-
-  const gameData: GameData = await fetchGameData(sessionId);
-  gameData.currentPlayer =
-    (gameData.currentPlayer + 1) % gameData.playersInSession.length;
-
-  const newPlayerId = gameData.playersInSession[gameData.currentPlayer];
-  await updatePlayerStatus(sessionId, newPlayerId);
-
-  await updateGameData(sessionId, gameData);
+  endPlayersTurn(sessionId, currentPlayerId);
 }

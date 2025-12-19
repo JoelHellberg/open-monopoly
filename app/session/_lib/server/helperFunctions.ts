@@ -6,7 +6,6 @@ import {
   fetchGameData,
   fetchOwnableData,
   fetchPlayerData,
-  updateGameData,
   updatePlayerData,
 } from "./database";
 import defaultBoard from "@/data/boards/default";
@@ -20,13 +19,22 @@ export async function assertPlayerActionAllowed(
   action: string,
   sessionId: string
 ): Promise<boolean> {
+  const gameData: GameData = await fetchGameData(sessionId);
+  if (!gameData.gameIsOn) return false;
+
+  const isPlayersTurn =
+    gameData.playersInSession[gameData.currentPlayer] === (await getPlayerId());
+  if (!isPlayersTurn) return false;
+
   switch (action) {
     case "THROW_DICE":
       return await assertCanThrowDice(sessionId);
     case "BUY_PROPERTY":
       return await assertCanBuyProperty(sessionId);
+    case "END_TURN":
+      return true;
   }
-  return true;
+  return false;
 }
 
 async function assertCanThrowDice(sessionId: string): Promise<boolean> {
@@ -41,10 +49,15 @@ async function assertCanBuyProperty(sessionId: string): Promise<boolean> {
   const playerData: Player = await fetchPlayerData(playerId, sessionId);
   if (playerData.status !== "BUYING") return false;
 
-  return isPropertyForSale(sessionId);
+  const street = defaultBoard[playerData.pos];
+  const ownableData: Ownable = await fetchOwnableData(street.name, sessionId);
+
+  return (
+    (await isPropertyForSale(sessionId)) && playerData.money > ownableData.cost
+  );
 }
 
-export async function isPropertyForSale(sessionId: string) {
+export async function isPropertyForSale(sessionId: string): Promise<boolean> {
   const playerId: string = await getPlayerId();
   const playerData: Player = await fetchPlayerData(playerId, sessionId);
 
@@ -54,7 +67,7 @@ export async function isPropertyForSale(sessionId: string) {
   const ownableData: Ownable = await fetchOwnableData(street.name, sessionId);
   if (ownableData.owner !== "") return false;
 
-  return playerData.money > ownableData.cost;
+  return true;
 }
 
 export async function updatePlayerStatus(sessionId: string, playerId: string) {

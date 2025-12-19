@@ -9,12 +9,21 @@ import {
   setPlayersStatus,
   updatePlayerStatus,
 } from "./helperFunctions";
-import { Ownable, Player } from "@/types/gameTypes";
+import { GameData, Ownable, Player } from "@/types/gameTypes";
 import {
+  fetchGameData,
   fetchOwnableData,
   fetchPlayerData,
+  updateGameData,
   updatePlayerData,
 } from "./database";
+
+export async function startPlayersTurn(sessionId: string, playerId: string) {
+  const playerData: Player = await fetchPlayerData(playerId, sessionId);
+
+  if (playerData.status === "") await updatePlayerStatus(sessionId, playerId);
+  else endPlayersTurn(sessionId, playerId);
+}
 
 export async function processLanding(sessionId: string, tilePos: number) {
   switch (defaultBoard[tilePos].type) {
@@ -59,4 +68,16 @@ async function handleEvent(sessionId: string) {
   const playerId: string = await getPlayerId();
   //tilfälligt
   await setPlayersStatus(sessionId, playerId, "FINISHING");
+}
+
+export async function endPlayersTurn(sessionId: string, playerId: string) {
+  await updatePlayerStatus(sessionId, playerId);
+
+  const gameData: GameData = await fetchGameData(sessionId);
+  gameData.currentPlayer =
+    (gameData.currentPlayer + 1) % gameData.playersInSession.length;
+  await updateGameData(sessionId, gameData);
+
+  const newPlayerId = gameData.playersInSession[gameData.currentPlayer];
+  await startPlayersTurn(sessionId, newPlayerId);
 }
