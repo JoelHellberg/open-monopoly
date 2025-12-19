@@ -39,10 +39,19 @@ async function assertCanBuyProperty(sessionId: string): Promise<boolean> {
   const playerData: Player = await fetchPlayerData(playerId, sessionId);
   if (playerData.status !== "BUYING") return false;
 
+  return isPropertyForSale(sessionId);
+}
+
+export async function isPropertyForSale(sessionId: string) {
+  const playerId: string = await getPlayerId();
+  const playerData: Player = await fetchPlayerData(playerId, sessionId);
+
   const street = defaultBoard[playerData.pos];
   if (street.type !== "ownable") return false;
 
   const ownableData: Ownable = await fetchOwnableData(street.name, sessionId);
+  if (ownableData.owner !== "") return false;
+
   return playerData.money > ownableData.cost;
 }
 
@@ -90,6 +99,7 @@ export async function setPlayersStatus(sessionId: string, status: string) {
   await updatePlayerData(playerId, sessionId, playerData);
 }
 
-async function endPlayersTurn(sessionId: string) {
-  await setPlayersStatus(sessionId, "");
+export async function endPlayersTurn(sessionId: string) {
+  // tillfälligt
+  await setPlayersStatus(sessionId, "PLAYING");
 }

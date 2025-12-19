@@ -4,7 +4,12 @@ import { getRTDBAdmin } from "@/app/_lib/firebaseAdmin";
 import defaultBoard from "@/data/boards/default";
 import { processLanding } from "./gameLogic";
 import { Ownable, Player } from "@/types/gameTypes";
-import { assertPlayerActionAllowed, getPlayerId, updatePlayerStatus } from "./helperFunctions";
+import {
+  assertPlayerActionAllowed,
+  endPlayersTurn,
+  getPlayerId,
+  updatePlayerStatus,
+} from "./helperFunctions";
 import {
   fetchOwnableData,
   fetchPlayerData,
@@ -81,4 +86,6 @@ export async function auction() {}
 
 export async function bidAuction() {}
 
-export async function endTurn() {}
+export async function endTurn(sessionId: string) {
+  await endPlayersTurn(sessionId);
+}

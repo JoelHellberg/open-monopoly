@@ -117,7 +117,7 @@ export async function verifyGameSession() {
   const session = await decrypt(sessionCookie);
 
   if (!session || !session.playerId) {
-    redirect("/");
+    throw new Error("Error verifying game session");
   }
 
   return { playerId: session.playerId };
@@ -126,6 +126,4 @@ export async function verifyGameSession() {
 export async function deleteGameSession() {
   const cookieStore = await cookies();
   cookieStore.delete(SESSION_COOKIE.name);
-
-  redirect("/");
 }
