@@ -1,10 +1,5 @@
 "use client";
-
-import { rtdb } from "@/app/_lib/firebase";
-import { Player } from "@/types/gameTypes";
-import { useParams } from "next/navigation";
-import { useEffect, useState } from "react";
-import { onValue, ref, off } from "firebase/database";
+import { useGameData } from "../../_lib/data/gameData";
 
 type Props = {
   playerId_in: string;
@@ -13,28 +8,9 @@ type Props = {
 };
 
 export default function PlayerDisplay(props: Props) {
-  const params = useParams();
-  const sessionId = params.sessionId as string;
-  const [playerData, setPlayerData] = useState<Player | null>(null);
-
-  useEffect(() => {
-    if (!sessionId) return;
-
-    const gameRef = ref(
-      rtdb,
-      `games/${sessionId}/players/${props.playerId_in}`
-    );
-
-    const unsubscribe = onValue(gameRef, (snapshot) => {
-      if (snapshot.exists()) {
-        const data = snapshot.val() as Player;
-        console.log("data from player data", data)
-        setPlayerData(data);
-      }
-    });
-
-    return unsubscribe;
-  }, [sessionId]);
+  const playerData = useGameData(
+    (state) => state.players?.[props.playerId_in] ?? null
+  );
 
   if (!playerData) return null;
 

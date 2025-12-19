@@ -1,38 +1,16 @@
 "use client";
-import { useEffect } from "react";
 import ActionsDisplay from "../board/actionsDisplay";
 import GameBoard from "../board/gameboard";
 import GameChat from "../chat/gameChat";
 import PropertiesDisplay from "../propertiesDisplay";
 import TurnDisplay from "../turnDisplay";
 import { useGameData } from "../_lib/data/gameData";
-import { useParams } from "next/navigation";
-import { onValue, ref, off } from "firebase/database";
-import { rtdb } from "@/app/_lib/firebase";
-import { GameDataRTDB } from "@/types/databaseTypes";
-import { normalizeGameData } from "../_lib/client/helperFunctions";
-import { GameData } from "@/types/gameTypes";
 import Settings from "../settings";
+import { useSessionSubscriptions } from "../_lib/client/database";
 
 export default function SessionPage() {
-  const params = useParams();
-  const sessionId = params.sessionId as string;
+  useSessionSubscriptions();
   const gameData = useGameData((state) => state.data);
-  const updateGameData = useGameData((state) => state.update);
-
-  useEffect(() => {
-    if (!sessionId) return;
-
-    const gameRef = ref(rtdb, `games/${sessionId}`);
-
-    return onValue(gameRef, (snapshot) => {
-      if (!snapshot.exists()) return;
-
-      const raw = snapshot.val() as GameDataRTDB;
-      const normalized: GameData = normalizeGameData(raw);
-      updateGameData(normalized);
-    });
-  }, [sessionId]);
 
   return (
     <div className="flex min-h-screen min-w-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">

@@ -22,6 +22,7 @@ export async function addGameDataToDB(gameData: GameData): Promise<string> {
 export async function addPlayerToGame(userId: string, sessionId: string) {
   const rtdb = await getRTDBAdmin();
   const playerData: Player = {
+    id: userId,
     money: 1000,
     ownables: [],
     pos: 0,
@@ -38,6 +39,7 @@ export async function addPropertyToGame(
   sessionId: string
 ) {
   const ownableData: Ownable = {
+    id: street.name,
     type: "property",
     familyMembers: [],
     housesAmount: 0,
@@ -53,6 +55,7 @@ export async function addTransportToGame(
   sessionId: string
 ) {
   const ownableData: Ownable = {
+    id: street.name,
     type: "transportation",
     familyMembers: [],
     housesAmount: 0,
@@ -65,6 +68,7 @@ export async function addTransportToGame(
 
 export async function addCompanyToGame(street: UtilityTile, sessionId: string) {
   const ownableData: Ownable = {
+    id: street.name,
     type: "company",
     familyMembers: [],
     housesAmount: 0,

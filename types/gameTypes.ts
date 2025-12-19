@@ -9,7 +9,9 @@ export type GameData = {
   gameIsOn: boolean;
 };
 
+export type Players = Record<string, Player>;
 export type Player = {
+  id: string;
   money: number;
   ownables: string[];
   pos: number;
@@ -17,7 +19,9 @@ export type Player = {
   color: string;
 };
 
+export type Ownables = Record<string, Ownable>;
 export type Ownable = {
+  id: string;
   type: string;
   familyMembers: string[];
   housesAmount: number;

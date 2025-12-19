@@ -1,6 +1,5 @@
 "use client";
 import Dice from "@/components/dice";
-import { useEffect, useState } from "react";
 import { useGameData } from "../_lib/data/gameData";
 import {
   endTurn,
@@ -9,29 +8,11 @@ import {
   throwDice,
 } from "../_lib/server/actions";
 import { useParams } from "next/navigation";
-import { rtdb } from "@/app/_lib/firebase";
-import { onValue, ref } from "firebase/database";
-import { Player } from "@/types/gameTypes";
 
 export default function ActionsDisplay() {
-  const params = useParams();
-  const sessionId = params.sessionId as string;
-
   const gameData = useGameData((state) => state.data);
   const playerId = useGameData((state) => state.ownPlayerId);
-  const [playerData, setPlayerData] = useState<Player | null>(null);
-
-  useEffect(() => {
-    if (!sessionId || !playerId) return;
-
-    const playerRef = ref(rtdb, `games/${sessionId}/players/${playerId}`);
-
-    return onValue(playerRef, (snapshot) => {
-      if (snapshot.exists()) {
-        setPlayerData(snapshot.val() as Player);
-      }
-    });
-  }, [sessionId, playerId]);
+  const playerData = useGameData((state) => state.players?.[playerId] ?? null);
 
   return (
     <div className="absolute inset-0 m-auto flex flex-col gap-5 items-center justify-center z-10">

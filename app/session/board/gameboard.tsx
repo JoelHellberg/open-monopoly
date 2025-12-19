@@ -1,13 +1,10 @@
 "use client";
 import defaultBoard from "@/data/boards/default";
-import type { Tile as BoardTile, PropertyTile } from "@/types/board";
+import type { Tile as BoardTile } from "@/types/board";
 import { propertyColors } from "@/data/colors";
-import React, { useEffect, useState } from "react";
+import React from "react";
 import PlayersDisplay from "./players/playersDisplay";
-import { useParams } from "next/navigation";
-import { Ownable } from "@/types/gameTypes";
-import { rtdb } from "@/app/_lib/firebase";
-import { onValue, ref } from "firebase/database";
+import { useGameData } from "../_lib/data/gameData";
 
 export default function GameBoard() {
   const board = defaultBoard;
@@ -67,25 +64,9 @@ function Tile({
     bottom: 0,
     left: 180,
   }[side];
-
-  const params = useParams();
-  const sessionId = params.sessionId as string;
-  const [ownableData, setOwnableData] = useState<Ownable | null>(null);
-
-  useEffect(() => {
-    if (!sessionId) return;
-
-    const gameRef = ref(rtdb, `games/${sessionId}/ownables/${street.name}`);
-
-    const unsubscribe = onValue(gameRef, (snapshot) => {
-      if (snapshot.exists()) {
-        const data = snapshot.val() as Ownable;
-        setOwnableData(data);
-      }
-    });
-
-    return unsubscribe;
-  }, [sessionId]);
+  const ownableData = useGameData(
+    (state) => state.ownables?.[street.name] ?? null
+  );
 
   // Color strip orientation
   const isOwnable = street.type === "ownable";
