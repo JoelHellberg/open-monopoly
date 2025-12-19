@@ -1,7 +1,35 @@
 "use server";
 
 import { getRTDBAdmin } from "@/app/_lib/firebaseAdmin";
-import { Ownable, Player } from "@/types/gameTypes";
+import { GameDataRTDB } from "@/types/databaseTypes";
+import { GameData, Ownable, Player } from "@/types/gameTypes";
+import { normalizeGameData } from "../client/helperFunctions";
+
+export async function fetchGameData(sessionId: string): Promise<GameData> {
+  const rtdb = await getRTDBAdmin();
+  const gameDataRef = rtdb.ref(`games/${sessionId}`);
+  const snapshot = await gameDataRef.get();
+
+  if (!snapshot.exists()) {
+    throw new Error("Game not found");
+  }
+
+  const raw = snapshot.val() as GameDataRTDB;
+  return normalizeGameData(raw);
+}
+
+export async function updateGameData(sessionId: string, gameData: GameData) {
+  const rtdb = await getRTDBAdmin();
+
+  const { playersInSession, ...rest } = gameData;
+
+  const rtdbData: GameDataRTDB = {
+    ...rest,
+    playersInSession: arrayToRTDBMap(playersInSession),
+  };
+
+  await rtdb.ref(`games/${sessionId}`).update(rtdbData);
+}
 
 export async function fetchPlayerData(
   playerId: string,
@@ -49,4 +77,9 @@ export async function updateOwnableData(
   const rtdb = await getRTDBAdmin();
   const ownableRef = rtdb.ref(`games/${sessionId}/ownables/${ownableId}`);
   await ownableRef.set(ownableData);
+}
+
+
+function arrayToRTDBMap(arr: string[]): Record<string, true> {
+  return Object.fromEntries(arr.map((id) => [id, true]));
 }

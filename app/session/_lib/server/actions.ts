@@ -3,16 +3,17 @@
 import { getRTDBAdmin } from "@/app/_lib/firebaseAdmin";
 import defaultBoard from "@/data/boards/default";
 import { processLanding } from "./gameLogic";
-import { Ownable, Player } from "@/types/gameTypes";
+import { GameData, Ownable, Player } from "@/types/gameTypes";
 import {
   assertPlayerActionAllowed,
-  endPlayersTurn,
   getPlayerId,
   updatePlayerStatus,
 } from "./helperFunctions";
 import {
+  fetchGameData,
   fetchOwnableData,
   fetchPlayerData,
+  updateGameData,
   updateOwnableData,
   updatePlayerData,
 } from "./database";
@@ -79,7 +80,7 @@ export async function purchase(sessionId: string) {
   await updatePlayerData(playerId, sessionId, playerData);
   await updateOwnableData(ownableId, sessionId, ownableData);
 
-  updatePlayerStatus(sessionId);
+  updatePlayerStatus(sessionId, playerId);
 }
 
 export async function auction() {}
@@ -87,5 +88,15 @@ export async function auction() {}
 export async function bidAuction() {}
 
 export async function endTurn(sessionId: string) {
-  await endPlayersTurn(sessionId);
+  const currentPlayerId: string = await getPlayerId();
+  await updatePlayerStatus(sessionId, currentPlayerId);
+
+  const gameData: GameData = await fetchGameData(sessionId);
+  gameData.currentPlayer =
+    (gameData.currentPlayer + 1) % gameData.playersInSession.length;
+
+  const newPlayerId = gameData.playersInSession[gameData.currentPlayer];
+  await updatePlayerStatus(sessionId, newPlayerId);
+
+  await updateGameData(sessionId, gameData);
 }

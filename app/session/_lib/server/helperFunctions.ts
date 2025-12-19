@@ -1,10 +1,12 @@
 "use server";
 
 import { verifyGameSession } from "@/app/_lib/session";
-import { Ownable, Player } from "@/types/gameTypes";
+import { GameData, Ownable, Player } from "@/types/gameTypes";
 import {
+  fetchGameData,
   fetchOwnableData,
   fetchPlayerData,
+  updateGameData,
   updatePlayerData,
 } from "./database";
 import defaultBoard from "@/data/boards/default";
@@ -55,51 +57,52 @@ export async function isPropertyForSale(sessionId: string) {
   return playerData.money > ownableData.cost;
 }
 
-export async function updatePlayerStatus(sessionId: string) {
-  const playerId: string = await getPlayerId();
+export async function updatePlayerStatus(sessionId: string, playerId: string) {
   const playerData: Player = await fetchPlayerData(playerId, sessionId);
 
   switch (playerData.status) {
     case "":
-      setPlayersStatus(sessionId, "PLAYING");
+      setPlayersStatus(sessionId, playerId, "PLAYING");
     case "PLAYING":
       // Just denna är oklar eftersom processLanding() typ gör detta??
       return;
     case "BUYING":
-      await setPlayersStatus(sessionId, "FINISHING");
+      await setPlayersStatus(sessionId, playerId, "FINISHING");
       return;
     case "FINISHING":
-      endPlayersTurn(sessionId);
+      await setPlayersStatus(sessionId, playerId, "");
       return;
 
     case "VACATION":
-      await setPlayersStatus(sessionId, "");
+      await setPlayersStatus(sessionId, playerId, "");
       return;
 
     case "JAIL":
-      await setPlayersStatus(sessionId, "JAIL1");
+      await setPlayersStatus(sessionId, playerId, "JAIL1");
       return;
     case "JAIL1":
-      await setPlayersStatus(sessionId, "JAIL2");
+      await setPlayersStatus(sessionId, playerId, "JAIL2");
       return;
     case "JAIL2":
-      await setPlayersStatus(sessionId, "JAIL3");
+      await setPlayersStatus(sessionId, playerId, "JAIL3");
       return;
     case "JAIL3":
-      await setPlayersStatus(sessionId, "");
+      await setPlayersStatus(sessionId, playerId, "");
       return;
   }
 }
 
-export async function setPlayersStatus(sessionId: string, status: string) {
-  const playerId: string = await getPlayerId();
+export async function setPlayersStatus(
+  sessionId: string,
+  playerId: string,
+  status: string
+) {
   const playerData: Player = await fetchPlayerData(playerId, sessionId);
-
   playerData.status = status;
   await updatePlayerData(playerId, sessionId, playerData);
 }
 
-export async function endPlayersTurn(sessionId: string) {
+export async function calculateStreetRent(ownable: Ownable): Promise<number> {
   // tillfälligt
-  await setPlayersStatus(sessionId, "PLAYING");
+  return ownable.rent[0];
 }

@@ -9,6 +9,9 @@ import { useGameData } from "../_lib/data/gameData";
 import { useParams } from "next/navigation";
 import { onValue, ref, off } from "firebase/database";
 import { rtdb } from "@/app/_lib/firebase";
+import { GameDataRTDB } from "@/types/databaseTypes";
+import { normalizeGameData } from "../_lib/client/helperFunctions";
+import { GameData } from "@/types/gameTypes";
 
 export default function SessionPage() {
   const params = useParams();
@@ -20,19 +23,13 @@ export default function SessionPage() {
 
     const gameRef = ref(rtdb, `games/${sessionId}`);
 
-    const unsubscribe = onValue(gameRef, (snapshot) => {
-      if (snapshot.exists()) {
-        const data = snapshot.val();
-        const playersArray = data.playersInSession
-          ? Object.keys(data.playersInSession)
-          : [];
+    return onValue(gameRef, (snapshot) => {
+      if (!snapshot.exists()) return;
 
-        const updatedData = { ...data, playersInSession: playersArray };
-        updateGameData(updatedData);
-      }
+      const raw = snapshot.val() as GameDataRTDB;
+      const normalized: GameData = normalizeGameData(raw);
+      updateGameData(normalized);
     });
-
-    return unsubscribe;
   }, [sessionId]);
 
   return (
