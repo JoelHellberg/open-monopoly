@@ -1,3 +1,4 @@
+"use client";
 import { useGameData } from "./_lib/data/gameData";
 
 export default function PropertiesDisplay() {

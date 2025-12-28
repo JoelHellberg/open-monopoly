@@ -86,7 +86,25 @@ function Tile({
       {isOwnable && (
         <>
           {isStreet && (
-            <div className={`absolute ${strip.className} ${colorClass}`} />
+            <div
+              className={`absolute flex items-center justify-center text-center ${strip.className} ${colorClass}`}
+            >
+              {ownableData && ownableData.housesAmount > 0 && (
+                <p
+                  className="font-bold z-50"
+                  style={{
+                    whiteSpace: "normal",
+                    writingMode: `${
+                      isHorizontal ? "horizontal-tb" : "vertical-rl"
+                    }`,
+                    transform: `rotate(${isHorizontal ? -rotation : -180}deg)`,
+                    textOrientation: "mixed",
+                  }}
+                >
+                  x{ownableData?.housesAmount}
+                </p>
+              )}
+            </div>
           )}
           {ownableData && ownableData.owner != "" && (
             <div
