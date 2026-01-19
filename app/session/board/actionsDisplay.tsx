@@ -15,20 +15,22 @@ export default function ActionsDisplay() {
   const playerData = useGameData((state) => state.players?.[playerId] ?? null);
 
   return (
-    <div className="absolute inset-0 m-auto flex flex-col gap-5 items-center justify-center z-10">
-      {gameData && !gameData.gameIsOn ? (
-        <StartGame />
-      ) : (
-        <>
-          <div className="flex gap-5">
-            <Dice numberOfSides={gameData?.diceOne} />
-            <Dice numberOfSides={gameData?.diceTwo} />
-          </div>
-          {playerData && playerData.status === "PLAYING" && <ThrowDice />}
-          {playerData && playerData.status === "BUYING" && <BuyProperty />}
-          {playerData && playerData.status === "FINISHING" && <EndTurn />}
-        </>
-      )}
+    <div className="absolute inset-0 m-auto flex flex-col gap-5 items-center justify-center z-10 pointer-events-none select-none">
+      <div className="m-auto flex flex-col gap-5 items-center justify-center pointer-events-auto">
+        {gameData && !gameData.gameIsOn ? (
+          <StartGame />
+        ) : (
+          <>
+            <div className="flex gap-5">
+              <Dice numberOfSides={gameData?.diceOne} />
+              <Dice numberOfSides={gameData?.diceTwo} />
+            </div>
+            {playerData && playerData.status === "PLAYING" && <ThrowDice />}
+            {playerData && playerData.status === "BUYING" && <BuyProperty />}
+            {playerData && playerData.status === "FINISHING" && <EndTurn />}
+          </>
+        )}
+      </div>
     </div>
   );
 }

@@ -2,12 +2,18 @@
 import defaultBoard from "@/data/boards/default";
 import type { Tile as BoardTile } from "@/types/board";
 import { propertyColors } from "@/data/colors";
-import React from "react";
+import React, { useState } from "react";
 import PlayersDisplay from "./players/playersDisplay";
 import { useGameData } from "../_lib/data/gameData";
+import TileInfoPanel from "./tileInfoPanel";
+import type { PropertyTile, RailroadTile, UtilityTile, } from "@/types/board";
+
+type OwnableTile = PropertyTile | RailroadTile | UtilityTile;
 
 export default function GameBoard() {
   const board = defaultBoard;
+  const [selectedTile, setSelectedTile] = useState<OwnableTile | null>(null);
+
   const sPS = board.length / 4 + 1; // Streets Per Side
   const sBC = sPS - 2; // Streets Between Corners
   console.log("streetsPerSide:", sPS);
@@ -18,7 +24,10 @@ export default function GameBoard() {
   const left = board.slice(sPS * 2 + sBC, sPS * 2 + sBC * 2).reverse();
 
   return (
-    <div className="h-full w-full relative">
+    <div className="h-full w-full relative select-none">
+      {selectedTile && (
+        <TileInfoPanel tile={selectedTile} onClose={() => setSelectedTile(null)}/>
+      )}
       <PlayersDisplay streetsPerSide={sPS} streetsBetweenCorners={sBC} />
       <div
         className="grid h-full w-full"
@@ -29,21 +38,21 @@ export default function GameBoard() {
       >
         {/* Top */}
         {top.map((street) => (
-          <Tile key={street.id} street={street} side="top" />
+          <Tile key={street.id} street={street} side="top" onSelect={setSelectedTile}/>
         ))}
 
         {/* Middle */}
         {Array.from({ length: 9 }, (_, i) => (
           <React.Fragment key={i}>
-            <Tile street={left[i]} side="left" />
+            <Tile street={left[i]} side="left" onSelect={setSelectedTile}/>
             <div className="col-span-9"></div>
-            <Tile street={right[i]} side="right" />
+            <Tile street={right[i]} side="right" onSelect={setSelectedTile}/>
           </React.Fragment>
         ))}
 
         {/* Bottom */}
         {bottom.map((street) => (
-          <Tile key={street.id} street={street} side="bottom" />
+          <Tile key={street.id} street={street} side="bottom" onSelect={setSelectedTile}/>
         ))}
       </div>
     </div>
@@ -53,9 +62,11 @@ export default function GameBoard() {
 function Tile({
   street,
   side,
+  onSelect,
 }: {
   street: BoardTile;
   side: "top" | "right" | "bottom" | "left";
+   onSelect?: (tile: OwnableTile) => void;
 }) {
   // Rotation based on side
   const rotation = {
@@ -67,6 +78,10 @@ function Tile({
   const ownableData = useGameData(
     (state) => state.ownables?.[street.name] ?? null
   );
+  const isOwnableTile = (
+    tile: BoardTile
+  ): tile is OwnableTile =>
+    tile.type === "ownable";
 
   // Color strip orientation
   const isOwnable = street.type === "ownable";
@@ -80,8 +95,15 @@ function Tile({
 
   return (
     <div
-      className="relative flex items-center justify-center border bg-white text-[8px] overflow-hidden rounded-sm"
+      className={`relative flex items-center justify-center border bg-white text-[8px] overflow-hidden rounded-sm
+        ${isOwnable ? "hover:bg-gray-100 hover:cursor-pointer" : ""}`}
       style={{ transform: `rotate(${rotation}deg)` }}
+      onClick={() => {
+        if (isOwnableTile(street)) {
+          console.log("Selected tile:", street.name);
+          onSelect?.(street);
+        }
+      }}
     >
       {isOwnable && (
         <>
