@@ -33,7 +33,7 @@ function PropertyInfo({ tile }: { tile: PropertyTile }) {
         <ul className="ml-3 mt-1 space-y-0.5">
           {tile.rent.map((r, i) => (
             <li key={i}>
-              {i === 5 ? "Hotel" : `${i} house${i === 1 ? "" : "s"}`}: ${r}
+              {i === 0 ? "Base" : i === 5 ? "Hotel" : `${i} house${i === 1 ? "" : "s"}`}: ${r}
             </li>
           ))}
         </ul>
@@ -77,8 +77,8 @@ function UtilityInfo({ tile }: { tile: UtilityTile }) {
       <div>
         <strong>Rent:</strong>
         <ul className="ml-3 mt-1 space-y-0.5">
-          <li>{tile.multiplier[0]}× dice (1 owned)</li>
-          <li>{tile.multiplier[1]}× dice (2 owned)</li>
+          <li>1 owned: {tile.multiplier[0]}× dice</li>
+          <li>2 owned: {tile.multiplier[1]}× dice</li>
         </ul>
       </div>
 
