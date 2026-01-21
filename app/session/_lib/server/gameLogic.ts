@@ -28,7 +28,7 @@ export async function startPlayersTurn(sessionId: string, playerId: string) {
 export async function processLanding(sessionId: string, tilePos: number) {
   switch (defaultBoard[tilePos].type) {
     case "event":
-      await handleEvent(sessionId);
+      await handleEvent(sessionId, tilePos);
       return;
     case "ownable":
       if (await isPropertyForSale(sessionId)) {
@@ -71,10 +71,41 @@ async function handleLandingOnProperty(sessionId: string) {
   await updatePlayerData(playerId, sessionId, playerData);
 }
 
-async function handleEvent(sessionId: string) {
+async function handleEvent(sessionId: string, tilePos: number) {
   const playerId: string = await getPlayerId();
-  //tilfälligt
-  
+  const playerData: Player = await fetchPlayerData(playerId, sessionId);
+
+  switch (defaultBoard[tilePos].subtype) {
+    case "go":
+      playerData.money += 300;
+      await updatePlayerData(playerId, sessionId, playerData);
+      break;
+    case "jail":
+      // Shouldn't do anything
+      break;
+    case "parking":
+      // no money storage implemented yet
+      break;
+    case "toJail":
+      break; // remove this later, no way to get out of jail now
+      const jailIndex = defaultBoard.findIndex(
+        (tile) => tile.subtype === "jail"
+      );
+      playerData.pos = jailIndex;
+      await updatePlayerData(playerId, sessionId, playerData);
+      await setPlayersStatus(sessionId, playerId, "JAIL");
+      return;
+    case "tax":
+      playerData.money -= defaultBoard[tilePos].amount;
+      await updatePlayerData(playerId, sessionId, playerData);
+      break;
+    case "chance":
+      // temporary
+      break;
+    case "chest":
+      // temporary
+      break;
+  }
   // Calculate if doubles
   const gameData: GameData = await fetchGameData(sessionId);
   const rolledDoubles = gameData.diceOne == gameData.diceTwo;

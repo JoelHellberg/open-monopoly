@@ -59,6 +59,10 @@ export async function throwDice(sessionId: string) {
 
   const playerData = playerSnapshot.val();
   const currentPos = playerData.pos ?? 0;
+  let newPlayerMoney = playerData.money;
+
+  // Gain 200 if passed Go
+  if (currentPos + playerMovement > defaultBoard.length ) newPlayerMoney += 200;
 
   // Calculate new player position
   let newPlayerPos =
@@ -70,7 +74,10 @@ export async function throwDice(sessionId: string) {
 
   // If 3rd double send to jail
   if (newDoublesInRow >= 3) {
-    newPlayerPos = 10;
+    const jailIndex = defaultBoard.findIndex(
+      (tile) => tile.subtype === "jail"
+    );
+    newPlayerPos = jailIndex;
     newDoublesInRow = 0;
     await playerRef.update({
       pos: newPlayerPos,
@@ -83,6 +90,7 @@ export async function throwDice(sessionId: string) {
     await playerRef.update({
       pos: newPlayerPos,
       doublesInRow: newDoublesInRow,
+      money: newPlayerMoney,
     });
 
     // Call your landing logic
@@ -95,14 +103,19 @@ export async function purchase(sessionId: string) {
 
   const playerId: string = await getPlayerId();
   const playerData: Player = await fetchPlayerData(playerId, sessionId);
+  const tile = defaultBoard[playerData.pos];
 
   // Ensure ownables array exists
   if (!Array.isArray(playerData.ownables)) {
     playerData.ownables = [];
   }
   // Get the ownable for the player's current position
-  const ownableId = defaultBoard[playerData.pos].name;
+  const ownableId = tile.name;
   const ownableData: Ownable = await fetchOwnableData(ownableId, sessionId);
+
+  if ( tile.type === "ownable" && playerData.money >= tile.price ) {
+    playerData.money -= tile.price;
+  }
 
   // Update local objects
   playerData.ownables.push(ownableId);
