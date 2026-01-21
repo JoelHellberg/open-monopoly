@@ -88,8 +88,8 @@ export async function updatePlayerStatus(sessionId: string, playerId: string) {
       return;
     case "FINISHING":
       playerData.doublesInRow = 0;
+      playerData.status = "";
       await updatePlayerData(playerId, sessionId, playerData);
-      await setPlayersStatus(sessionId, playerId, "");
       return;
 
     case "VACATION":

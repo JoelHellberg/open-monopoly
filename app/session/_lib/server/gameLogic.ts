@@ -115,6 +115,8 @@ async function handleEvent(sessionId: string, tilePos: number) {
 
 export async function endPlayersTurn(sessionId: string, playerId: string) {
   await updatePlayerStatus(sessionId, playerId);
+  const playerData: Player = await fetchPlayerData(playerId, sessionId);
+  if (playerData.status === "PLAYING") return;
 
   const gameData: GameData = await fetchGameData(sessionId);
   gameData.currentPlayer =
