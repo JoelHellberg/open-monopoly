@@ -80,9 +80,15 @@ export async function updatePlayerStatus(sessionId: string, playerId: string) {
       // Just denna är oklar eftersom processLanding() typ gör detta??
       return;
     case "BUYING":
-      await setPlayersStatus(sessionId, playerId, "FINISHING");
+      const gameData: GameData = await fetchGameData(sessionId);
+      const rolledDoubles = gameData.diceOne == gameData.diceTwo;
+      if (rolledDoubles) {
+        setPlayersStatus(sessionId, playerId, "PLAYING");
+      } else await setPlayersStatus(sessionId, playerId, "FINISHING");
       return;
     case "FINISHING":
+      playerData.doublesInRow = 0;
+      await updatePlayerData(playerId, sessionId, playerData);
       await setPlayersStatus(sessionId, playerId, "");
       return;
 

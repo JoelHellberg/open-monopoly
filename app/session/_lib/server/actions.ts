@@ -8,6 +8,7 @@ import {
   assertPlayerActionAllowed,
   getPlayerId,
   updatePlayerStatus,
+  setPlayersStatus,
 } from "./helperFunctions";
 import {
   fetchGameData,
@@ -41,6 +42,7 @@ export async function throwDice(sessionId: string) {
   const diceOne = Math.floor(Math.random() * 6) + 1;
   const diceTwo = Math.floor(Math.random() * 6) + 1;
   const playerMovement = diceOne + diceTwo;
+  const rolledDoubles = diceOne == diceTwo;
 
   // Update dice values in the gameData node
   const gameRef = rtdb.ref(`games/${sessionId}`);
@@ -59,16 +61,33 @@ export async function throwDice(sessionId: string) {
   const currentPos = playerData.pos ?? 0;
 
   // Calculate new player position
-  const newPlayerPos =
+  let newPlayerPos =
     (currentPos + playerMovement) % (defaultBoard.length - 1);
 
-  // Update player position
-  await playerRef.update({
-    pos: newPlayerPos,
-  });
+  // Calculate number of doubles in a row
+  let newDoublesInRow = playerData.doublesInRow;
+  if(rolledDoubles) newDoublesInRow += 1;
 
-  // Call your landing logic
-  await processLanding(sessionId, newPlayerPos);
+  // If 3rd double send to jail
+  if (newDoublesInRow >= 3) {
+    newPlayerPos = 10;
+    newDoublesInRow = 0;
+    await playerRef.update({
+      pos: newPlayerPos,
+      doublesInRow: newDoublesInRow,
+    });
+    await setPlayersStatus(sessionId, playerId, "JAIL");
+  }
+  else {
+    // Update player position and number of doubles
+    await playerRef.update({
+      pos: newPlayerPos,
+      doublesInRow: newDoublesInRow,
+    });
+
+    // Call your landing logic
+    await processLanding(sessionId, newPlayerPos);
+  }
 }
 
 export async function purchase(sessionId: string) {

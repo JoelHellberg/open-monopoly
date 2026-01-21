@@ -28,6 +28,7 @@ export async function addPlayerToGame(userId: string, sessionId: string) {
     pos: 0,
     status: "",
     color: "",
+    doublesInRow: 0,
   };
 
   await rtdb.ref(`games/${sessionId}/players/${userId}`).set(playerData);

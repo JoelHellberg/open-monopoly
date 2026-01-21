@@ -48,9 +48,13 @@ async function handleLandingOnProperty(sessionId: string) {
     board[playerData.pos].name,
     sessionId
   );
+  // Calculate if doubles
+  const gameData: GameData = await fetchGameData(sessionId);
+  const rolledDoubles = gameData.diceOne == gameData.diceTwo;
 
   if (ownableData.owner === playerId) {
-    await setPlayersStatus(sessionId, playerId, "FINISHING");
+    if (rolledDoubles) await setPlayersStatus(sessionId, playerId, "PLAYING");
+    else await setPlayersStatus(sessionId, playerId, "FINISHING");
     return;
   }
 
@@ -58,7 +62,10 @@ async function handleLandingOnProperty(sessionId: string) {
 
   playerData.money -= rent;
 
-  if (playerData.money >= 0) playerData.status = "FINISHING";
+  if (playerData.money >= 0) {
+    if (rolledDoubles) playerData.status = "PLAYING";
+    else playerData.status = "FINISHING";
+  } 
   else playerData.status = "DEBTED";
 
   await updatePlayerData(playerId, sessionId, playerData);
@@ -67,7 +74,12 @@ async function handleLandingOnProperty(sessionId: string) {
 async function handleEvent(sessionId: string) {
   const playerId: string = await getPlayerId();
   //tilfälligt
-  await setPlayersStatus(sessionId, playerId, "FINISHING");
+  
+  // Calculate if doubles
+  const gameData: GameData = await fetchGameData(sessionId);
+  const rolledDoubles = gameData.diceOne == gameData.diceTwo;
+  if (rolledDoubles) await setPlayersStatus(sessionId, playerId, "PLAYING");
+  else await setPlayersStatus(sessionId, playerId, "FINISHING");
 }
 
 export async function endPlayersTurn(sessionId: string, playerId: string) {

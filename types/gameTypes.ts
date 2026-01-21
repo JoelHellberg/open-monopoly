@@ -17,6 +17,7 @@ export type Player = {
   pos: number;
   status: string;
   color: string;
+  doublesInRow: number;
 };
 
 export type Ownables = Record<string, Ownable>;
