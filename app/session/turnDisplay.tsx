@@ -2,22 +2,36 @@
 import { useGameData } from "./_lib/data/gameData";
 
 export default function TurnDisplay() {
-  const players = useGameData((state) => state.data?.playersInSession);
+  const playersInSession = useGameData((state) => state.data?.playersInSession);
+  const players = useGameData((state) => state.players);
+
   return (
     <div className="flex flex-col flex-1 bg-green-400 rounded-lg">
-      {players &&
-        players.map((playerId) => (
-          <Player key={playerId} username={playerId} />
-        ))}
+      {playersInSession &&
+        players &&
+        playersInSession.map((playerId) => {
+          const player = players[playerId];
+          if (!player) return null;
+
+          return (
+            <Player
+              key={playerId}
+              username={playerId}
+              money={player.money}
+              color={player.color}
+            />
+          );
+        })}
     </div>
   );
 }
 
-function Player(props: { username: string }) {
+function Player(props: { username: string; money: number; color: string }) {
   return (
-    <div className="flex w-full bg-yellow-400 opacity-50 items-center">
-      <div className="h-4 aspect-square bg-red-400 rounded-full" />
-      <p>{props.username}</p>
+    <div className="flex w-full items-center gap-2 bg-yellow-400 opacity-50 px-2 py-1">
+      <div className="h-4 aspect-square rounded-full" style={{ backgroundColor: props.color }} />
+      <p className="flex-1">{props.username}</p>
+      <p className="text-sm font-semibold">${props.money}</p>
     </div>
   );
 }

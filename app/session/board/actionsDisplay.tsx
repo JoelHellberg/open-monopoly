@@ -8,11 +8,17 @@ import {
   throwDice,
 } from "../_lib/server/actions";
 import { useParams } from "next/navigation";
+import defaultBoard from "@/data/boards/default";
+import type { PropertyTile, RailroadTile, UtilityTile, Tile } from "@/types/board";
 
 export default function ActionsDisplay() {
   const gameData = useGameData((state) => state.data);
   const playerId = useGameData((state) => state.ownPlayerId);
   const playerData = useGameData((state) => state.players?.[playerId] ?? null);
+  const tile = playerData ? defaultBoard[playerData.pos] : null;
+
+  const isOwnableTile = ( tile: Tile | null ): tile is PropertyTile | RailroadTile | UtilityTile => tile?.type === "ownable";
+  const cost = isOwnableTile(tile) ? tile.price : 0;
 
   return (
     <div className="absolute inset-0 m-auto flex flex-col gap-5 items-center justify-center z-10 pointer-events-none select-none">
@@ -26,7 +32,7 @@ export default function ActionsDisplay() {
               <Dice numberOfSides={gameData?.diceTwo} />
             </div>
             {playerData && playerData.status === "PLAYING" && <ThrowDice />}
-            {playerData && playerData.status === "BUYING" && <BuyProperty />}
+            {playerData && playerData.status === "BUYING" && <BuyProperty cost={cost} />}
             {playerData && playerData.status === "FINISHING" && <EndTurn />}
           </>
         )}
@@ -74,7 +80,7 @@ function EndTurn() {
   );
 }
 
-function BuyProperty() {
+function BuyProperty({ cost }: { cost: number }) {
   const params = useParams();
   const sessionId = params.sessionId as string;
   return (
@@ -83,7 +89,7 @@ function BuyProperty() {
         className="p-2 text-black bg-white rounded-md shadow-md hover:bg-gray-200 hover:cursor-pointer"
         onClick={() => purchase(sessionId)}
       >
-        Purchase
+        Purchase (${cost})
       </button>
       <button
         className="p-2 text-black bg-white rounded-md shadow-md hover:bg-gray-200 hover:cursor-pointer"
