@@ -6,6 +6,7 @@ import {
   purchase,
   startGame,
   throwDice,
+  callUpdatePlayerStatus,
 } from "../_lib/server/actions";
 import { useParams } from "next/navigation";
 import defaultBoard from "@/data/boards/default";
@@ -19,6 +20,7 @@ export default function ActionsDisplay() {
 
   const isOwnableTile = ( tile: Tile | null ): tile is PropertyTile | RailroadTile | UtilityTile => tile?.type === "ownable";
   const cost = isOwnableTile(tile) ? tile.price : 0;
+  const canBuy = (playerData?.money ?? 0) >= cost;
 
   return (
     <div className="absolute inset-0 m-auto flex flex-col gap-5 items-center justify-center z-10 pointer-events-none select-none">
@@ -32,7 +34,7 @@ export default function ActionsDisplay() {
               <Dice numberOfSides={gameData?.diceTwo} />
             </div>
             {playerData && playerData.status === "PLAYING" && <ThrowDice />}
-            {playerData && playerData.status === "BUYING" && <BuyProperty cost={cost} />}
+            {playerData && playerData.status === "BUYING" && <BuyProperty cost={cost} canBuy={canBuy} />}
             {playerData && playerData.status === "FINISHING" && <EndTurn />}
           </>
         )}
@@ -80,20 +82,27 @@ function EndTurn() {
   );
 }
 
-function BuyProperty({ cost }: { cost: number }) {
+function BuyProperty({ cost, canBuy }: { cost: number; canBuy: boolean }) {
   const params = useParams();
   const sessionId = params.sessionId as string;
+  console.log(canBuy);
   return (
     <div className="flex gap-5">
       <button
-        className="p-2 text-black bg-white rounded-md shadow-md hover:bg-gray-200 hover:cursor-pointer"
+        disabled={!canBuy}
         onClick={() => purchase(sessionId)}
+        className={`
+          p-2 rounded-md shadow-md
+          ${canBuy
+            ? "bg-white text-black hover:bg-gray-200 hover:cursor-pointer"
+            : "bg-gray-300 text-gray-500 cursor-not-allowed opacity-60"}
+        `}
       >
         Purchase (${cost})
       </button>
       <button
         className="p-2 text-black bg-white rounded-md shadow-md hover:bg-gray-200 hover:cursor-pointer"
-        onClick={() => endTurn(sessionId)}
+        onClick={() => callUpdatePlayerStatus(sessionId)}
       >
         Don't buy
       </button>

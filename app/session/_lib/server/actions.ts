@@ -138,3 +138,8 @@ export async function endTurn(sessionId: string) {
   const currentPlayerId: string = await getPlayerId();
   endPlayersTurn(sessionId, currentPlayerId);
 }
+
+export async function callUpdatePlayerStatus(sessionId: string){
+  const playerId: string = await getPlayerId();
+  updatePlayerStatus(sessionId, playerId);
+}
