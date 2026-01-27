@@ -45,7 +45,8 @@ export async function addPropertyToGame(
     familyMembers: [],
     housesAmount: 0,
     owner: "",
-    cost: street.houseCost,
+    price: street.price,
+    houseCost: street.houseCost,
     rent: street.rent,
   };
   addOwnableToGame(ownableData, street.name, sessionId);
@@ -61,7 +62,8 @@ export async function addTransportToGame(
     familyMembers: [],
     housesAmount: 0,
     owner: "",
-    cost: 0,
+    price: street.price,
+    houseCost: 0,
     rent: street.rent,
   };
   addOwnableToGame(ownableData, street.name, sessionId);
@@ -74,7 +76,8 @@ export async function addCompanyToGame(street: UtilityTile, sessionId: string) {
     familyMembers: [],
     housesAmount: 0,
     owner: "",
-    cost: 0,
+    price: street.price,
+    houseCost: 0,
     rent: street.multiplier,
   };
   addOwnableToGame(ownableData, street.name, sessionId);

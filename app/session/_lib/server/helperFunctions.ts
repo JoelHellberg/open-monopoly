@@ -53,7 +53,7 @@ async function assertCanBuyProperty(sessionId: string): Promise<boolean> {
   const ownableData: Ownable = await fetchOwnableData(street.name, sessionId);
 
   return (
-    (await isPropertyForSale(sessionId)) && playerData.money > ownableData.cost
+    (await isPropertyForSale(sessionId)) && playerData.money >= ownableData.price
   );
 }
 

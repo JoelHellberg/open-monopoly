@@ -62,7 +62,7 @@ export async function throwDice(sessionId: string) {
   let newPlayerMoney = playerData.money;
 
   // Gain 200 if passed Go
-  if (currentPos + playerMovement > defaultBoard.length ) newPlayerMoney += 200;
+  if (currentPos + playerMovement >= defaultBoard.length ) newPlayerMoney += 200;
 
   // Calculate new player position
   let newPlayerPos =

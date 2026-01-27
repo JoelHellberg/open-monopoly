@@ -26,7 +26,6 @@ function PropertyInfo({ tile }: { tile: PropertyTile }) {
   return (
     <div className="text-xs space-y-2 text-black">
       <div><strong>Buy Cost:</strong> ${tile.price}</div>
-      <div><strong>House Cost:</strong> ${tile.houseCost}</div>
 
       <div>
         <strong>Rent:</strong>
@@ -38,6 +37,8 @@ function PropertyInfo({ tile }: { tile: PropertyTile }) {
           ))}
         </ul>
       </div>
+
+      <div><strong>House Cost:</strong> ${tile.houseCost}</div>
 
       <div>
         <strong>Mortgage Value:</strong> ${tile.price / 2}
@@ -101,7 +102,7 @@ function Header({
       <h2 className="font-semibold text-sm text-black">{name}</h2>
       <button
         onClick={onClose}
-        className="text-xs text-gray-500 hover:text-black"
+        className="text-gray-500 hover:text-black cursor-pointer"
       >
         ✕
       </button>

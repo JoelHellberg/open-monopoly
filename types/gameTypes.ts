@@ -27,7 +27,8 @@ export type Ownable = {
   familyMembers: string[];
   housesAmount: number;
   owner: string;
-  cost: number;
+  price: number;
+  houseCost: number;
   rent: number[];
 };
 
