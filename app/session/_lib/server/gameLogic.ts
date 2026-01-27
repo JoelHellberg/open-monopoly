@@ -21,6 +21,15 @@ import {
 export async function startPlayersTurn(sessionId: string, playerId: string) {
   const playerData: Player = await fetchPlayerData(playerId, sessionId);
 
+  if (playerData.status === "JAIL") {
+    await updatePlayerStatus(sessionId, playerId);
+    return;
+  }
+
+  if (playerData.status === "JAIL1" || playerData.status === "JAIL2" || playerData.status === "JAIL3") {
+    return;
+  }
+
   if (playerData.status === "") await updatePlayerStatus(sessionId, playerId);
   else endPlayersTurn(sessionId, playerId);
 }
@@ -65,7 +74,7 @@ async function handleLandingOnProperty(sessionId: string) {
   if (playerData.money >= 0) {
     if (rolledDoubles) playerData.status = "PLAYING";
     else playerData.status = "FINISHING";
-  } 
+  }
   else playerData.status = "DEBTED";
 
   await updatePlayerData(playerId, sessionId, playerData);
@@ -87,13 +96,14 @@ async function handleEvent(sessionId: string, tilePos: number) {
       // no money storage implemented yet
       break;
     case "toJail":
-      break; // remove this later, no way to get out of jail now
+      //break; // remove this later, no way to get out of jail now
       const jailIndex = defaultBoard.findIndex(
         (tile) => tile.subtype === "jail"
       );
       playerData.pos = jailIndex;
       await updatePlayerData(playerId, sessionId, playerData);
       await setPlayersStatus(sessionId, playerId, "JAIL");
+      await endPlayersTurn(sessionId, playerId);
       return;
     case "tax":
       playerData.money -= defaultBoard[tilePos].amount;

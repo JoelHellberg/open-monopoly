@@ -7,6 +7,9 @@ import {
   startGame,
   throwDice,
   callUpdatePlayerStatus,
+  rollJail,
+  payJail,
+  goToJail,
 } from "../_lib/server/actions";
 import { useParams } from "next/navigation";
 import defaultBoard from "@/data/boards/default";
@@ -18,9 +21,11 @@ export default function ActionsDisplay() {
   const playerData = useGameData((state) => state.players?.[playerId] ?? null);
   const tile = playerData ? defaultBoard[playerData.pos] : null;
 
-  const isOwnableTile = ( tile: Tile | null ): tile is PropertyTile | RailroadTile | UtilityTile => tile?.type === "ownable";
+  const isOwnableTile = (tile: Tile | null): tile is PropertyTile | RailroadTile | UtilityTile => tile?.type === "ownable";
   const cost = isOwnableTile(tile) ? tile.price : 0;
   const canBuy = (playerData?.money ?? 0) >= cost;
+  const jailStatuses = ["JAIL", "JAIL1", "JAIL2", "JAIL3"];
+  const canBuyOut = jailStatuses.includes(playerData?.status ?? "") && (playerData?.money ?? 0) >= 50;
 
   return (
     <div className="absolute inset-0 m-auto flex flex-col gap-5 items-center justify-center z-10 pointer-events-none select-none">
@@ -36,6 +41,7 @@ export default function ActionsDisplay() {
             {playerData && playerData.status === "PLAYING" && <ThrowDice />}
             {playerData && playerData.status === "BUYING" && <BuyProperty cost={cost} canBuy={canBuy} />}
             {playerData && playerData.status === "FINISHING" && <EndTurn />}
+            {playerData && jailStatuses.includes(playerData.status) && <InJail canBuyOut={canBuyOut} />}
           </>
         )}
       </div>
@@ -60,12 +66,20 @@ function ThrowDice() {
   const params = useParams();
   const sessionId = params.sessionId as string;
   return (
-    <button
-      className="p-2 text-black bg-white rounded-md shadow-md hover:bg-gray-200 hover:cursor-pointer"
-      onClick={() => throwDice(sessionId)}
-    >
-      Throw Dice
-    </button>
+    <div className="flex gap-5">
+      <button
+        className="p-2 text-black bg-white rounded-md shadow-md hover:bg-gray-200 hover:cursor-pointer"
+        onClick={() => throwDice(sessionId)}
+      >
+        Throw Dice
+      </button>
+      <button
+        className="p-2 text-black bg-white rounded-md shadow-md hover:bg-gray-200 hover:cursor-pointer"
+        onClick={() => goToJail(sessionId)}
+      >
+        Go to Jail immediately
+      </button>
+    </div>
   );
 }
 
@@ -73,12 +87,14 @@ function EndTurn() {
   const params = useParams();
   const sessionId = params.sessionId as string;
   return (
-    <button
-      className="p-2 text-black bg-white rounded-md shadow-md hover:bg-gray-200 hover:cursor-pointer"
-      onClick={() => endTurn(sessionId)}
-    >
-      End Turn
-    </button>
+    <div className="flex gap-5">
+      <button
+        className="p-2 text-black bg-white rounded-md shadow-md hover:bg-gray-200 hover:cursor-pointer"
+        onClick={() => endTurn(sessionId)}
+      >
+        End Turn
+      </button>
+    </div>
   );
 }
 
@@ -91,12 +107,10 @@ function BuyProperty({ cost, canBuy }: { cost: number; canBuy: boolean }) {
       <button
         disabled={!canBuy}
         onClick={() => purchase(sessionId)}
-        className={`
-          p-2 rounded-md shadow-md
+        className={`p-2 rounded-md shadow-md
           ${canBuy
             ? "bg-white text-black hover:bg-gray-200 hover:cursor-pointer"
-            : "bg-gray-300 text-gray-500 cursor-not-allowed opacity-60"}
-        `}
+            : "bg-gray-300 text-gray-500 cursor-not-allowed opacity-60"}`}
       >
         Purchase (${cost})
       </button>
@@ -105,6 +119,31 @@ function BuyProperty({ cost, canBuy }: { cost: number; canBuy: boolean }) {
         onClick={() => callUpdatePlayerStatus(sessionId)}
       >
         Don't buy
+      </button>
+    </div>
+  );
+}
+
+function InJail({ canBuyOut }: { canBuyOut: boolean }) {
+  const params = useParams();
+  const sessionId = params.sessionId as string;
+  return (
+    <div className="flex gap-5">
+      <button
+        className="p-2 text-black bg-white rounded-md shadow-md hover:bg-gray-200 hover:cursor-pointer"
+        onClick={() => rollJail(sessionId)}
+      >
+        Throw Dice
+      </button>
+      <button
+        disabled={!canBuyOut}
+        className={`p-2 rounded-md shadow-md
+          ${canBuyOut
+            ? "bg-white text-black hover:bg-gray-200 hover:cursor-pointer"
+            : "bg-gray-300 text-gray-500 cursor-not-allowed opacity-60"}`}
+        onClick={() => payJail(sessionId)}
+      >
+        Buy Out
       </button>
     </div>
   );

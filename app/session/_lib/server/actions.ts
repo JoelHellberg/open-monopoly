@@ -18,6 +18,7 @@ import {
   updateOwnableData,
   updatePlayerData,
 } from "./database";
+import { Gothic_A1 } from "next/font/google";
 
 export async function startGame(sessionId: string) {
   const playerId: string = await getPlayerId();
@@ -38,11 +39,47 @@ export async function throwDice(sessionId: string) {
   const playerId: string = await getPlayerId();
   const rtdb = await getRTDBAdmin();
 
+  const { playerMovement, rolledDoubles } = await rollDice(sessionId, rtdb);
+
+  walkTheBoard(sessionId, playerId, rtdb, playerMovement, rolledDoubles);
+}
+
+export async function rollJail(sessionId: string) {
+  if (!(await assertPlayerActionAllowed("ROLL_JAIL", sessionId))) return;
+
+  const playerId: string = await getPlayerId();
+  const rtdb = await getRTDBAdmin();
+
+  const { playerMovement, rolledDoubles } = await rollDice(sessionId, rtdb);
+
+  if (rolledDoubles) {
+    await setPlayersStatus(sessionId, playerId, "PLAYING");
+    walkTheBoard(sessionId, playerId, rtdb, playerMovement, rolledDoubles);
+  }
+  else {
+    await endPlayersTurn(sessionId, playerId);
+  }
+}
+
+export async function payJail(sessionId: string) {
+  if (!(await assertPlayerActionAllowed("PAY_JAIL", sessionId))) return;
+
+  const playerId: string = await getPlayerId();
+  const playerData: Player = await fetchPlayerData(playerId, sessionId);
+
+  playerData.money -= 50;
+  playerData.status = "PLAYING";
+
+  await updatePlayerData(playerId, sessionId, playerData);
+}
+
+async function rollDice(sessionId: string, rtdb: any): Promise<{ playerMovement: number; rolledDoubles: boolean }> {
   // Roll the dice
   const diceOne = Math.floor(Math.random() * 6) + 1;
   const diceTwo = Math.floor(Math.random() * 6) + 1;
+
   const playerMovement = diceOne + diceTwo;
-  const rolledDoubles = diceOne == diceTwo;
+  const rolledDoubles = diceOne === diceTwo;
 
   // Update dice values in the gameData node
   const gameRef = rtdb.ref(`games/${sessionId}`);
@@ -51,6 +88,10 @@ export async function throwDice(sessionId: string) {
     diceTwo,
   });
 
+  return { playerMovement, rolledDoubles };
+}
+
+async function walkTheBoard(sessionId: string, playerId: string, rtdb: any, playerMovement: number, rolledDoubles: boolean) {
   // Get current player position
   const playerRef = rtdb.ref(`games/${sessionId}/players/${playerId}`);
   const playerSnapshot = await playerRef.get();
@@ -59,10 +100,10 @@ export async function throwDice(sessionId: string) {
 
   const playerData = playerSnapshot.val();
   const currentPos = playerData.pos ?? 0;
-  let newPlayerMoney = playerData.money;
 
+  let newPlayerMoney = playerData.money;
   // Gain 200 if passed Go
-  if (currentPos + playerMovement >= defaultBoard.length ) newPlayerMoney += 200;
+  if (currentPos + playerMovement >= defaultBoard.length) newPlayerMoney += 200;
 
   // Calculate new player position
   let newPlayerPos =
@@ -70,7 +111,7 @@ export async function throwDice(sessionId: string) {
 
   // Calculate number of doubles in a row
   let newDoublesInRow = playerData.doublesInRow;
-  if(rolledDoubles) newDoublesInRow += 1;
+  if (rolledDoubles) newDoublesInRow += 1;
 
   // If 3rd double send to jail
   if (newDoublesInRow >= 3) {
@@ -84,6 +125,7 @@ export async function throwDice(sessionId: string) {
       doublesInRow: newDoublesInRow,
     });
     await setPlayersStatus(sessionId, playerId, "JAIL");
+    endTurn(sessionId);
   }
   else {
     // Update player position and number of doubles
@@ -113,7 +155,7 @@ export async function purchase(sessionId: string) {
   const ownableId = tile.name;
   const ownableData: Ownable = await fetchOwnableData(ownableId, sessionId);
 
-  if ( tile.type === "ownable" && playerData.money >= tile.price ) {
+  if (tile.type === "ownable" && playerData.money >= tile.price) {
     playerData.money -= tile.price;
   }
 
@@ -128,9 +170,9 @@ export async function purchase(sessionId: string) {
   updatePlayerStatus(sessionId, playerId);
 }
 
-export async function auction() {}
+export async function auction() { }
 
-export async function bidAuction() {}
+export async function bidAuction() { }
 
 export async function endTurn(sessionId: string) {
   if (!(await assertPlayerActionAllowed("END_TURN", sessionId))) return;
@@ -139,7 +181,16 @@ export async function endTurn(sessionId: string) {
   endPlayersTurn(sessionId, currentPlayerId);
 }
 
-export async function callUpdatePlayerStatus(sessionId: string){
+export async function callUpdatePlayerStatus(sessionId: string) {
   const playerId: string = await getPlayerId();
   updatePlayerStatus(sessionId, playerId);
+}
+
+export async function goToJail(sessionId: string) {
+  const playerId: string = await getPlayerId();
+  const playerData: Player = await fetchPlayerData(playerId, sessionId);
+  playerData.status = "JAIL";
+  playerData.pos = defaultBoard.findIndex((tile) => tile.subtype === "jail");
+  await updatePlayerData(playerId, sessionId, playerData);
+  endPlayersTurn(sessionId, playerId);
 }
