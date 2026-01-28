@@ -73,6 +73,18 @@ export async function payJail(sessionId: string) {
   await updatePlayerData(playerId, sessionId, playerData);
 }
 
+export async function useJailFreeCard(sessionId: string) {
+  if (!(await assertPlayerActionAllowed("USE_JAIL_FREE_CARD", sessionId))) return;
+
+  const playerId: string = await getPlayerId();
+  const playerData: Player = await fetchPlayerData(playerId, sessionId);
+
+  playerData.jailFreeCards -= 1;
+  playerData.status = "PLAYING";
+
+  await updatePlayerData(playerId, sessionId, playerData);
+}
+
 async function rollDice(sessionId: string, rtdb: any): Promise<{ playerMovement: number; rolledDoubles: boolean }> {
   // Roll the dice
   const diceOne = Math.floor(Math.random() * 6) + 1;
@@ -186,6 +198,8 @@ export async function callUpdatePlayerStatus(sessionId: string) {
   updatePlayerStatus(sessionId, playerId);
 }
 
+//extra developer actions
+
 export async function goToJail(sessionId: string) {
   const playerId: string = await getPlayerId();
   const playerData: Player = await fetchPlayerData(playerId, sessionId);
@@ -193,4 +207,26 @@ export async function goToJail(sessionId: string) {
   playerData.pos = defaultBoard.findIndex((tile) => tile.subtype === "jail");
   await updatePlayerData(playerId, sessionId, playerData);
   endPlayersTurn(sessionId, playerId);
+}
+
+export async function goToNextCardSpace(sessionId: string) {
+
+  const playerId: string = await getPlayerId();
+  const playerData: Player = await fetchPlayerData(playerId, sessionId);
+  const tile = defaultBoard[playerData.pos];
+
+  const nextCardSpaceIndex = defaultBoard.findIndex(
+    (tile) => tile.type === "event" && (tile.subtype === "chest" || tile.subtype === "chance") && tile.id > playerData.pos + 1
+  );
+
+  if (nextCardSpaceIndex === -1) {
+    throw new Error("No card space found");
+  }
+
+  playerData.pos = nextCardSpaceIndex;
+
+  // Write updates back to the database
+  await updatePlayerData(playerId, sessionId, playerData);
+
+  await processLanding(sessionId, nextCardSpaceIndex);
 }

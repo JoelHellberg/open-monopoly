@@ -37,6 +37,8 @@ export async function assertPlayerActionAllowed(
       return await assertCanRollJail(sessionId);
     case "PAY_JAIL":
       return await assertCanPayJail(sessionId);
+    case "USE_JAIL_FREE_CARD":
+      return await assertCanUseJailFreeCard(sessionId);
   }
   return false;
 }
@@ -73,6 +75,13 @@ async function assertCanPayJail(sessionId: string): Promise<boolean> {
   const playerData: Player = await fetchPlayerData(playerId, sessionId);
 
   return ["JAIL1", "JAIL2", "JAIL3"].includes(playerData.status) && playerData.money >= 50;
+}
+
+async function assertCanUseJailFreeCard(sessionId: string): Promise<boolean> {
+  const playerId: string = await getPlayerId();
+  const playerData: Player = await fetchPlayerData(playerId, sessionId);
+
+  return ["JAIL1", "JAIL2", "JAIL3"].includes(playerData.status) && playerData.jailFreeCards > 0;
 }
 
 export async function isPropertyForSale(sessionId: string): Promise<boolean> {

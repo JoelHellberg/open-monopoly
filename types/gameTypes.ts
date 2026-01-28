@@ -18,6 +18,7 @@ export type Player = {
   status: string;
   color: string;
   doublesInRow: number;
+  jailFreeCards: number;
 };
 
 export type Ownables = Record<string, Ownable>;
@@ -36,4 +37,13 @@ export type GameMessage = {
   messageContent: string;
   playerId: string;
   timeStamp: Timestamp;
+};
+
+export type Card = {
+  id: number;
+  text: string;
+  action: "MOVE" | "PAY" | "RECEIVE" | "JAIL_FREE" | "GO_TO_JAIL" | "MOVEREL" | "PAY_ALL" | "RECEIVE_ALL";
+  value?: number; // Amount or relative movement
+  target?: number; // Target tile ID (for MOVE)
+  subaction?: string; // For "nearest utility/railroad"
 };

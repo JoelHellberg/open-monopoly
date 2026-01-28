@@ -10,6 +10,8 @@ import {
   rollJail,
   payJail,
   goToJail,
+  goToNextCardSpace,
+  useJailFreeCard,
 } from "../_lib/server/actions";
 import { useParams } from "next/navigation";
 import defaultBoard from "@/data/boards/default";
@@ -41,7 +43,8 @@ export default function ActionsDisplay() {
             {playerData && playerData.status === "PLAYING" && <ThrowDice />}
             {playerData && playerData.status === "BUYING" && <BuyProperty cost={cost} canBuy={canBuy} />}
             {playerData && playerData.status === "FINISHING" && <EndTurn />}
-            {playerData && jailStatuses.includes(playerData.status) && <InJail canBuyOut={canBuyOut} />}
+            {playerData && jailStatuses.includes(playerData.status) &&
+              <InJail canBuyOut={canBuyOut} jailFreeCards={playerData.jailFreeCards ?? 0} />}
           </>
         )}
       </div>
@@ -78,6 +81,12 @@ function ThrowDice() {
         onClick={() => goToJail(sessionId)}
       >
         Go to Jail immediately
+      </button>
+      <button
+        className="p-2 text-black bg-white rounded-md shadow-md hover:bg-gray-200 hover:cursor-pointer"
+        onClick={() => goToNextCardSpace(sessionId)}
+      >
+        Go to next card space
       </button>
     </div>
   );
@@ -124,7 +133,7 @@ function BuyProperty({ cost, canBuy }: { cost: number; canBuy: boolean }) {
   );
 }
 
-function InJail({ canBuyOut }: { canBuyOut: boolean }) {
+function InJail({ canBuyOut, jailFreeCards }: { canBuyOut: boolean; jailFreeCards: number }) {
   const params = useParams();
   const sessionId = params.sessionId as string;
   return (
@@ -145,6 +154,14 @@ function InJail({ canBuyOut }: { canBuyOut: boolean }) {
       >
         Buy Out
       </button>
+      {jailFreeCards > 0 && (
+        <button
+          className="p-2 text-black bg-white rounded-md shadow-md hover:bg-gray-200 hover:cursor-pointer"
+          onClick={() => useJailFreeCard(sessionId)}
+        >
+          Use Jail Free Card ({jailFreeCards})
+        </button>
+      )}
     </div>
   );
 }

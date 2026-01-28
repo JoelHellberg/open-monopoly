@@ -17,6 +17,9 @@ import {
   updateGameData,
   updatePlayerData,
 } from "./database";
+import { chanceCards } from "@/data/cards/chance";
+import { communityChestCards } from "@/data/cards/communityChest";
+import { Card } from "@/types/gameTypes";
 
 export async function startPlayersTurn(sessionId: string, playerId: string) {
   const playerData: Player = await fetchPlayerData(playerId, sessionId);
@@ -110,12 +113,15 @@ async function handleEvent(sessionId: string, tilePos: number) {
       await updatePlayerData(playerId, sessionId, playerData);
       break;
     case "chance":
-      // temporary
+      const chanceResult = await handleCard(sessionId, playerId, "chance");
+      if (chanceResult !== "CONTINUE") return;
       break;
     case "chest":
-      // temporary
+      const chestResult = await handleCard(sessionId, playerId, "chest");
+      if (chestResult !== "CONTINUE") return;
       break;
   }
+
   // Calculate if doubles
   const gameData: GameData = await fetchGameData(sessionId);
   const rolledDoubles = gameData.diceOne == gameData.diceTwo;
@@ -124,8 +130,9 @@ async function handleEvent(sessionId: string, tilePos: number) {
 }
 
 export async function endPlayersTurn(sessionId: string, playerId: string) {
-  await updatePlayerStatus(sessionId, playerId);
   const playerData: Player = await fetchPlayerData(playerId, sessionId);
+  if (playerData.status === "JAIL") console.log("Player is in jail");
+  else await updatePlayerStatus(sessionId, playerId)
   if (playerData.status === "PLAYING") return;
 
   const gameData: GameData = await fetchGameData(sessionId);
@@ -135,4 +142,134 @@ export async function endPlayersTurn(sessionId: string, playerId: string) {
 
   const newPlayerId = gameData.playersInSession[gameData.currentPlayer];
   await startPlayersTurn(sessionId, newPlayerId);
+}
+
+async function handleCard(sessionId: string, playerId: string, type: "chance" | "chest"): Promise<string> {
+  const deck = type === "chance" ? chanceCards : communityChestCards;
+  const card = deck[Math.floor(Math.random() * deck.length)];
+
+  // Log card for debugging/history
+  console.log(`Player ${playerId} drew card: ${type},${card.text}`);
+
+  const playerData: Player = await fetchPlayerData(playerId, sessionId);
+
+  switch (card.action) {
+    case "MOVE":
+      let newPos = -1;
+      const currentPos = playerData.pos;
+
+      if (card.target !== undefined) {
+        newPos = card.target;
+      } else if (card.subaction) {
+        if (card.subaction === "nearest_utility") {
+          // Utilities are at indices 12 and 28
+          const utilities = [12, 28];
+          // Find next utility
+          const nextUtility = utilities.find(u => u > currentPos) || utilities[0];
+          if (nextUtility < currentPos) playerData.money += 200; // Passed Go
+          newPos = nextUtility;
+        } else if (card.subaction === "nearest_railroad") {
+          // Railroads are at indices 5, 15, 25, 35
+          const railroads = [5, 15, 25, 35];
+          const nextRailroad = railroads.find(r => r > currentPos) || railroads[0];
+          if (nextRailroad < currentPos) playerData.money += 200; // Passed Go
+          newPos = nextRailroad;
+        }
+      }
+
+      if (newPos !== -1) {
+        // Handle "Advance to <target>"
+        // If passing Go, collect 200
+        if (card.target !== undefined) {
+          if (newPos < currentPos && card.target !== 0) { // 0 is Go
+            playerData.money += 200;
+          }
+        }
+
+        playerData.pos = newPos;
+        await updatePlayerData(playerId, sessionId, playerData);
+      }
+      await processLanding(sessionId, newPos);
+      return "MOVED_AND_LANDED";
+
+    case "MOVEREL":
+      if (card.value) {
+        const boardLength = defaultBoard.length;
+        let newPos = (playerData.pos + card.value) % boardLength;
+        if (newPos < 0) newPos += boardLength;
+
+        playerData.pos = newPos;
+        await updatePlayerData(playerId, sessionId, playerData);
+        await processLanding(sessionId, newPos);
+      }
+      return "MOVED_AND_LANDED";
+
+    case "PAY":
+      if (card.value) {
+        playerData.money -= card.value;
+        await updatePlayerData(playerId, sessionId, playerData);
+      }
+      break;
+
+    case "RECEIVE":
+      if (card.value) {
+        playerData.money += card.value;
+        await updatePlayerData(playerId, sessionId, playerData);
+      }
+      break;
+
+    case "GO_TO_JAIL":
+      const jailIndex = defaultBoard.findIndex(
+        (tile) => tile.subtype === "jail"
+      );
+      playerData.pos = jailIndex;
+      await updatePlayerData(playerId, sessionId, playerData);
+      await setPlayersStatus(sessionId, playerId, "JAIL");
+      await endPlayersTurn(sessionId, playerId);
+      return "TURN_ENDED";
+
+    case "JAIL_FREE":
+      playerData.jailFreeCards = (playerData.jailFreeCards || 0) + 1;
+      await updatePlayerData(playerId, sessionId, playerData);
+      break;
+
+    case "PAY_ALL":
+      if (card.value) {
+        const gameData = await fetchGameData(sessionId);
+        const players = gameData.playersInSession;
+        let totalPaid = 0;
+
+        for (const pid of players) {
+          if (pid !== playerId) {
+            const pData = await fetchPlayerData(pid, sessionId);
+            pData.money += card.value;
+            await updatePlayerData(pid, sessionId, pData);
+            totalPaid += card.value;
+          }
+        }
+        playerData.money -= totalPaid;
+        await updatePlayerData(playerId, sessionId, playerData);
+      }
+      break;
+
+    case "RECEIVE_ALL":
+      if (card.value) {
+        const gameData = await fetchGameData(sessionId);
+        const players = gameData.playersInSession;
+        let totalReceived = 0;
+
+        for (const pid of players) {
+          if (pid !== playerId) {
+            const pData = await fetchPlayerData(pid, sessionId);
+            pData.money -= card.value;
+            await updatePlayerData(pid, sessionId, pData);
+            totalReceived += card.value;
+          }
+        }
+        playerData.money += totalReceived;
+        await updatePlayerData(playerId, sessionId, playerData);
+      }
+      break;
+  }
+  return "CONTINUE";
 }
