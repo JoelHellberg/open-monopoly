@@ -39,6 +39,14 @@ export async function assertPlayerActionAllowed(
       return await assertCanPayJail(sessionId);
     case "USE_JAIL_FREE_CARD":
       return await assertCanUseJailFreeCard(sessionId);
+    case "BUY_HOUSE":
+      return await assertCanBuyHouse(sessionId);
+    case "SELL_HOUSE":
+      return await assertCanSellHouse(sessionId);
+    case "SELL_PROPERTY":
+      return await assertCanSellProperty(sessionId);
+    case "MORTGAGE_PROPERTY":
+      return await assertCanMortgageProperty(sessionId);
   }
   return false;
 }
@@ -82,6 +90,34 @@ async function assertCanUseJailFreeCard(sessionId: string): Promise<boolean> {
   const playerData: Player = await fetchPlayerData(playerId, sessionId);
 
   return ["JAIL1", "JAIL2", "JAIL3"].includes(playerData.status) && playerData.jailFreeCards > 0;
+}
+
+async function assertCanBuyHouse(sessionId: string): Promise<boolean> {
+  const playerId: string = await getPlayerId();
+  const playerData: Player = await fetchPlayerData(playerId, sessionId);
+
+  return ["BUYING", "PLAYING", "FINISHING"].includes(playerData.status);
+}
+
+async function assertCanSellHouse(sessionId: string): Promise<boolean> {
+  const playerId: string = await getPlayerId();
+  const playerData: Player = await fetchPlayerData(playerId, sessionId);
+
+  return ["BUYING", "PLAYING", "FINISHING"].includes(playerData.status);
+}
+
+async function assertCanSellProperty(sessionId: string): Promise<boolean> {
+  const playerId: string = await getPlayerId();
+  const playerData: Player = await fetchPlayerData(playerId, sessionId);
+
+  return ["BUYING", "PLAYING", "FINISHING"].includes(playerData.status);
+}
+
+async function assertCanMortgageProperty(sessionId: string): Promise<boolean> {
+  const playerId: string = await getPlayerId();
+  const playerData: Player = await fetchPlayerData(playerId, sessionId);
+
+  return ["BUYING", "PLAYING", "FINISHING"].includes(playerData.status);
 }
 
 export async function isPropertyForSale(sessionId: string): Promise<boolean> {

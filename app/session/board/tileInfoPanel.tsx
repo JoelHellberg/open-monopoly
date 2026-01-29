@@ -1,5 +1,7 @@
 "use client";
-import type { PropertyTile, RailroadTile, UtilityTile, Tile, } from "@/types/board";
+import type { PropertyTile, RailroadTile, UtilityTile } from "@/types/board";
+import { sellProperty, mortgageProperty, buyHouse, sellHouse } from "../_lib/server/actions";
+import { useParams } from "next/navigation";
 
 type OwnableTile = PropertyTile | RailroadTile | UtilityTile;
 
@@ -10,6 +12,7 @@ interface Props {
 
 export default function TileInfoPanel({ tile, onClose }: Props) {
   const mortgageValue = tile.price / 2;
+  const sessionId = useParams().sessionId as string;
 
   return (
     <div className="fixed right-4 top-4 w-64 bg-white shadow-lg border rounded-md p-3 z-50">
@@ -18,6 +21,22 @@ export default function TileInfoPanel({ tile, onClose }: Props) {
       {tile.subtype === "property" && <PropertyInfo tile={tile} />}
       {tile.subtype === "transportation" && <RailroadInfo tile={tile} />}
       {tile.subtype === "company" && <UtilityInfo tile={tile} />}
+      <button className="p-2 text-black bg-white rounded-md shadow-md hover:bg-gray-200 hover:cursor-pointer"
+        onClick={async () => await sellProperty(sessionId, tile.name)}>
+        Sell Property
+      </button>
+      <button className="p-2 text-black bg-white rounded-md shadow-md hover:bg-gray-200 hover:cursor-pointer"
+        onClick={async () => await mortgageProperty(sessionId, tile.name)}>
+        Mortgage Property
+      </button>
+      <button className="p-2 text-black bg-white rounded-md shadow-md hover:bg-gray-200 hover:cursor-pointer"
+        onClick={async () => await buyHouse(sessionId, tile.name)}>
+        Buy House
+      </button>
+      <button className="p-2 text-black bg-white rounded-md shadow-md hover:bg-gray-200 hover:cursor-pointer"
+        onClick={async () => await sellHouse(sessionId, tile.name)}>
+        Sell House
+      </button>
     </div>
   );
 }

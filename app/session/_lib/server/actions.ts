@@ -20,6 +20,7 @@ import {
 } from "./database";
 import { Gothic_A1 } from "next/font/google";
 
+
 export async function startGame(sessionId: string) {
   const playerId: string = await getPlayerId();
   const gameData: GameData = await fetchGameData(sessionId);
@@ -185,6 +186,77 @@ export async function purchase(sessionId: string) {
 export async function auction() { }
 
 export async function bidAuction() { }
+
+export async function sellProperty(sessionId: string, tileName: string) {
+  if (!(await assertPlayerActionAllowed("SELL_PROPERTY", sessionId))) return;
+
+  const playerId: string = await getPlayerId();
+  const playerData: Player = await fetchPlayerData(playerId, sessionId);
+  const ownableData: Ownable = await fetchOwnableData(tileName, sessionId);
+
+  if (ownableData.type === "ownable" && ownableData.owner === playerId && ownableData.housesAmount === 0) {
+    // Update local objects
+    playerData.money += ownableData.price;
+    ownableData.owner = "";
+    playerData.ownables = playerData.ownables.filter((ownable) => ownable !== tileName);
+
+    // Write updates back to the database
+    await updatePlayerData(playerId, sessionId, playerData);
+    await updateOwnableData(tileName, sessionId, ownableData);
+  }
+}
+
+export async function mortgageProperty(sessionId: string, tileName: string) {
+  if (!(await assertPlayerActionAllowed("MORTGAGE_PROPERTY", sessionId))) return;
+
+  const playerId: string = await getPlayerId();
+  const playerData: Player = await fetchPlayerData(playerId, sessionId);
+  const ownableData: Ownable = await fetchOwnableData(tileName, sessionId);
+
+  if (ownableData.type === "ownable" && ownableData.owner === playerId) {
+    // Update local objects
+    playerData.money += ownableData.price / 2;
+    ownableData.mortgaged = true;
+
+    // Write updates back to the database
+    await updatePlayerData(playerId, sessionId, playerData);
+    await updateOwnableData(tileName, sessionId, ownableData);
+  }
+}
+
+export async function buyHouse(sessionId: string, tileName: string) {
+  if (!(await assertPlayerActionAllowed("BUY_HOUSE", sessionId))) return;
+  const playerId: string = await getPlayerId();
+  const playerData: Player = await fetchPlayerData(playerId, sessionId);
+  const ownableData: Ownable = await fetchOwnableData(tileName, sessionId);
+
+  if (ownableData.type === "property" && playerData.money >= ownableData.houseCost && ownableData.owner === playerId && ownableData.housesAmount < 5) {
+    // Update local objects
+    playerData.money -= ownableData.houseCost;
+    ownableData.housesAmount += 1;
+  }
+  // Write updates back to the database
+  await updatePlayerData(playerId, sessionId, playerData);
+  await updateOwnableData(tileName, sessionId, ownableData);
+}
+
+export async function sellHouse(sessionId: string, tileName: string) {
+  if (!(await assertPlayerActionAllowed("SELL_HOUSE", sessionId))) return;
+
+  const playerId: string = await getPlayerId();
+  const playerData: Player = await fetchPlayerData(playerId, sessionId);
+  const ownableData: Ownable = await fetchOwnableData(tileName, sessionId);
+
+  if (ownableData.type === "property" && ownableData.housesAmount > 0 && ownableData.owner === playerId) {
+    // Update local objects
+    playerData.money += ownableData.houseCost / 2;
+    ownableData.housesAmount -= 1;
+  }
+
+  // Write updates back to the database
+  await updatePlayerData(playerId, sessionId, playerData);
+  await updateOwnableData(tileName, sessionId, ownableData);
+}
 
 export async function endTurn(sessionId: string) {
   if (!(await assertPlayerActionAllowed("END_TURN", sessionId))) return;

@@ -29,6 +29,7 @@ export async function addPlayerToGame(userId: string, sessionId: string) {
     status: "",
     color: "",
     doublesInRow: 0,
+    jailFreeCards: 0,
   };
 
   await rtdb.ref(`games/${sessionId}/players/${userId}`).set(playerData);
@@ -45,6 +46,7 @@ export async function addPropertyToGame(
     familyMembers: [],
     housesAmount: 0,
     owner: "",
+    mortgaged: false,
     price: street.price,
     houseCost: street.houseCost,
     rent: street.rent,
@@ -62,6 +64,7 @@ export async function addTransportToGame(
     familyMembers: [],
     housesAmount: 0,
     owner: "",
+    mortgaged: false,
     price: street.price,
     houseCost: 0,
     rent: street.rent,
@@ -76,6 +79,7 @@ export async function addCompanyToGame(street: UtilityTile, sessionId: string) {
     familyMembers: [],
     housesAmount: 0,
     owner: "",
+    mortgaged: false,
     price: street.price,
     houseCost: 0,
     rent: street.multiplier,
