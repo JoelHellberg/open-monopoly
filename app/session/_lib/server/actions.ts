@@ -194,9 +194,9 @@ export async function sellProperty(sessionId: string, tileName: string) {
   const playerData: Player = await fetchPlayerData(playerId, sessionId);
   const ownableData: Ownable = await fetchOwnableData(tileName, sessionId);
 
-  if (ownableData.type === "ownable" && ownableData.owner === playerId && ownableData.housesAmount === 0) {
+  if (ownableData.owner === playerId && ownableData.housesAmount === 0) {
     // Update local objects
-    playerData.money += ownableData.price;
+    playerData.money += ownableData.price / 2;
     ownableData.owner = "";
     playerData.ownables = playerData.ownables.filter((ownable) => ownable !== tileName);
 
@@ -213,7 +213,7 @@ export async function mortgageProperty(sessionId: string, tileName: string) {
   const playerData: Player = await fetchPlayerData(playerId, sessionId);
   const ownableData: Ownable = await fetchOwnableData(tileName, sessionId);
 
-  if (ownableData.type === "ownable" && ownableData.owner === playerId) {
+  if (ownableData.owner === playerId && ownableData.housesAmount === 0) {
     // Update local objects
     playerData.money += ownableData.price / 2;
     ownableData.mortgaged = true;
@@ -229,8 +229,11 @@ export async function buyHouse(sessionId: string, tileName: string) {
   const playerId: string = await getPlayerId();
   const playerData: Player = await fetchPlayerData(playerId, sessionId);
   const ownableData: Ownable = await fetchOwnableData(tileName, sessionId);
+  const ownsFamily = ownableData.type === "property" && ownableData.owner === playerId
+    && ownableData.familyMembers.every(el => playerData.ownables.includes(el));
+  const canBuyHouse = playerData.money >= ownableData.houseCost && ownableData.housesAmount < 5 && ownsFamily;
 
-  if (ownableData.type === "property" && playerData.money >= ownableData.houseCost && ownableData.owner === playerId && ownableData.housesAmount < 5) {
+  if (canBuyHouse) {
     // Update local objects
     playerData.money -= ownableData.houseCost;
     ownableData.housesAmount += 1;

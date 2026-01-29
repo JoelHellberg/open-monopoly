@@ -29,7 +29,7 @@ export async function hostGame(board: Tile[]) {
     if (street.type === "ownable") {
       switch (street.subtype) {
         case "property":
-          await addPropertyToGame(street, sessionId);
+          await addPropertyToGame(street, sessionId, board);
           break;
         case "transportation":
           await addTransportToGame(street, sessionId);

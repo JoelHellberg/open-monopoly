@@ -1,6 +1,6 @@
 "use server";
 import { getRTDBAdmin } from "@/app/_lib/firebaseAdmin";
-import { PropertyTile, RailroadTile, UtilityTile } from "@/types/board";
+import { PropertyTile, RailroadTile, Tile, UtilityTile } from "@/types/board";
 import { GameData, Ownable, Player } from "@/types/gameTypes";
 
 function generateRandomId(length: number): string {
@@ -38,12 +38,13 @@ export async function addPlayerToGame(userId: string, sessionId: string) {
 
 export async function addPropertyToGame(
   street: PropertyTile,
-  sessionId: string
+  sessionId: string,
+  board: Tile[]
 ) {
   const ownableData: Ownable = {
     id: street.name,
     type: "property",
-    familyMembers: [],
+    familyMembers: board.filter((el): el is PropertyTile => el.type === "ownable" && el.subtype === "property").filter(el => el.color === street.color).map(el => el.name),
     housesAmount: 0,
     owner: "",
     mortgaged: false,
