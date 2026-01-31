@@ -213,11 +213,21 @@ export async function mortgageProperty(sessionId: string, tileName: string) {
   const playerId: string = await getPlayerId();
   const playerData: Player = await fetchPlayerData(playerId, sessionId);
   const ownableData: Ownable = await fetchOwnableData(tileName, sessionId);
-
-  if (ownableData.owner === playerId && ownableData.housesAmount === 0) {
+  // If the player owns the property and has no houses and it's not mortgaged
+  if (ownableData.owner === playerId && ownableData.housesAmount === 0 && !ownableData.mortgaged) {
     // Update local objects
     playerData.money += ownableData.price / 2;
     ownableData.mortgaged = true;
+
+    // Write updates back to the database
+    await updatePlayerData(playerId, sessionId, playerData);
+    await updateOwnableData(tileName, sessionId, ownableData);
+  }
+  // If the player owns the property and it's mortgaged
+  else if (ownableData.owner === playerId && ownableData.mortgaged) {
+    // Update local objects
+    playerData.money -= Math.round(ownableData.price / 2 * 1.1);
+    ownableData.mortgaged = false;
 
     // Write updates back to the database
     await updatePlayerData(playerId, sessionId, playerData);
@@ -231,7 +241,7 @@ export async function buyHouse(sessionId: string, tileName: string) {
   const playerData: Player = await fetchPlayerData(playerId, sessionId);
   const ownableData: Ownable = await fetchOwnableData(tileName, sessionId);
   const canBuyHouse = playerData.money >= ownableData.houseCost &&
-    ownableData.housesAmount < 5 && await hasMonopoly(ownableData, playerData);
+    ownableData.housesAmount < 5 && await hasMonopoly(ownableData, playerData) && !ownableData.mortgaged;
 
   if (canBuyHouse) {
     // Update local objects

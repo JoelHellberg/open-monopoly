@@ -29,28 +29,13 @@ export default function TileInfoPanel({ tile, onClose }: Props) {
       {tile.subtype === "property" && <PropertyInfo tile={tile} ownableData={ownableData} ownerData={ownerData} />}
       {tile.subtype === "transportation" && <RailroadInfo tile={tile} ownableData={ownableData} ownerData={ownerData} />}
       {tile.subtype === "company" && <UtilityInfo tile={tile} ownableData={ownableData} ownerData={ownerData} />}
-      <button className="p-2 text-black bg-white rounded-md shadow-md hover:bg-gray-200 hover:cursor-pointer"
-        onClick={async () => await sellProperty(sessionId, tile.name)}>
-        Sell Property
-      </button>
-      <button className="p-2 text-black bg-white rounded-md shadow-md hover:bg-gray-200 hover:cursor-pointer"
-        onClick={async () => await mortgageProperty(sessionId, tile.name)}>
-        Mortgage Property
-      </button>
-      <button className="p-2 text-black bg-white rounded-md shadow-md hover:bg-gray-200 hover:cursor-pointer"
-        onClick={async () => await buyHouse(sessionId, tile.name)}>
-        Buy House
-      </button>
-      <button className="p-2 text-black bg-white rounded-md shadow-md hover:bg-gray-200 hover:cursor-pointer"
-        onClick={async () => await sellHouse(sessionId, tile.name)}>
-        Sell House
-      </button>
+      {ownableData?.owner === ownerData?.id && <SellButtons tile={tile} ownableData={ownableData} />}
     </div>
   );
 }
 
 function PropertyInfo({ tile, ownableData, ownerData }: { tile: PropertyTile, ownableData?: Ownable, ownerData?: Player }) {
-  const currentLevel = ownableData?.owner !== "" ? ownableData?.housesAmount ?? 0 : -1;
+  const currentLevel = ownableData?.owner !== "" && !ownableData?.mortgaged ? ownableData?.housesAmount ?? 0 : -1;
 
   // Custom monopoly check
   let hasMonopoly = false;
@@ -93,7 +78,7 @@ function RailroadInfo({ tile, ownableData, ownerData }: { tile: RailroadTile, ow
   }
   // If nobody owns it, ownedCount is 0, highlight nothing or handled gracefully? 
   // Rent levels are 0-indexed in map (0 => 1 owned, 1 => 2 owned, etc.)
-  const activeIndex = ownedCount > 0 ? ownedCount - 1 : -1;
+  const activeIndex = ownedCount > 0 && !ownableData?.mortgaged ? ownedCount - 1 : -1;
 
   return (
     <div className="text-xs space-y-2 text-black">
@@ -123,7 +108,7 @@ function UtilityInfo({ tile, ownableData, ownerData }: { tile: UtilityTile, owna
     ownedCount = ownerData.ownables.filter((name: string) => defaultBoard.find(t => t.name === name)?.subtype === "company").length;
   }
 
-  const activeIndex = ownedCount > 0 ? ownedCount - 1 : -1;
+  const activeIndex = ownedCount > 0 && !ownableData?.mortgaged ? ownedCount - 1 : -1;
 
   return (
     <div className="text-xs space-y-2 text-black">
@@ -140,6 +125,34 @@ function UtilityInfo({ tile, ownableData, ownerData }: { tile: UtilityTile, owna
       <div>
         <strong>Mortgage Value:</strong> ${tile.price / 2}
       </div>
+    </div>
+  );
+}
+
+function SellButtons({ tile, ownableData }: { tile: OwnableTile, ownableData?: Ownable }) {
+  const sessionId = useParams().sessionId as string;
+  return (
+    <div className="flex flex-row">
+      <button className={`text-sm rounded-md shadow-md 
+          ${ownableData?.housesAmount === 0 ? "text-black bg-white hover:bg-gray-200 hover:cursor-pointer" : "bg-gray-300 text-gray-500 cursor-not-allowed"} `}
+        onClick={async () => await sellProperty(sessionId, tile.name)}>
+        Sell Property
+      </button>
+      <button className={`text-sm rounded-md shadow-md 
+          ${ownableData?.housesAmount === 0 ? "text-black bg-white hover:bg-gray-200 hover:cursor-pointer" : "bg-gray-300 text-gray-500 cursor-not-allowed"} `}
+        onClick={async () => await mortgageProperty(sessionId, tile.name)}>
+        {ownableData?.mortgaged ? "Unmortgage Property" : "Mortgage Property"}
+      </button>
+      <button className={`text-sm rounded-md shadow-md 
+          ${ownableData?.housesAmount !== 5 ? "text-black bg-white hover:bg-gray-200 hover:cursor-pointer" : "bg-gray-300 text-gray-500 cursor-not-allowed"} `}
+        onClick={async () => await buyHouse(sessionId, tile.name)}>
+        {ownableData?.housesAmount === 4 ? "Buy Hotel" : "Buy House"}
+      </button>
+      <button className={`text-sm rounded-md shadow-md 
+          ${ownableData?.housesAmount !== 0 ? "text-black bg-white hover:bg-gray-200 hover:cursor-pointer" : "bg-gray-300 text-gray-500 cursor-not-allowed"} `}
+        onClick={async () => await sellHouse(sessionId, tile.name)}>
+        {ownableData?.housesAmount === 5 ? "Sell Hotel" : "Sell House"}
+      </button>
     </div>
   );
 }
