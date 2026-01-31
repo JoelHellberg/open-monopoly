@@ -14,7 +14,6 @@ export default function GameBoard({ onSelectTile }: { onSelectTile: (tile: Ownab
 
   const sPS = board.length / 4 + 1; // Streets Per Side
   const sBC = sPS - 2; // Streets Between Corners
-  console.log("streetsPerSide:", sPS);
 
   const top = board.slice(0, sPS);
   const right = board.slice(sPS, sPS + sBC);
@@ -70,9 +69,7 @@ function Tile({
     bottom: 0,
     left: 180,
   }[side];
-  const ownableData = useGameData(
-    (state) => state.ownables?.[street.name] ?? null
-  );
+  const ownableData = useGameData((state) => state.ownables?.[street.name] ?? null);
   const isOwnableTile = (
     tile: BoardTile
   ): tile is OwnableTile =>
@@ -131,12 +128,12 @@ function Tile({
           {ownableData && ownableData.owner != "" && (
             <div
               className={
-                "absolute aspect-square rounded-full " +
+                "absolute aspect-square rounded-full border border-white border-2 " +
                 (isHorizontal
                   ? "w-1/3 top-0 -translate-y-1/2"
                   : "h-2/5 left-0 -translate-x-1/2")
               }
-              style={{ backgroundColor: `#${"00FF00"}` }}
+              style={{ backgroundColor: `#${useGameData.getState().players?.[ownableData.owner]?.color ?? "000000"}` }}
             />
           )}
         </>

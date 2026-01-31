@@ -29,7 +29,7 @@ export default function TurnDisplay() {
 function Player(props: { username: string; money: number; color: string }) {
   return (
     <div className="flex w-full items-center gap-2 bg-green-500 px-2 py-1 rounded-lg">
-      <div className="h-4 aspect-square rounded-full" style={{ backgroundColor: props.color }} />
+      <div className="h-4 aspect-square rounded-full" style={{ backgroundColor: `#${props.color || "000000"}` }} />
       <p className="flex-1">{props.username}</p>
       <p className="text-sm font-semibold">${props.money}</p>
     </div>

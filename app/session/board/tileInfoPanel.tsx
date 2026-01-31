@@ -142,16 +142,16 @@ function SellButtons({ tile, ownableData }: { tile: OwnableTile, ownableData?: O
         onClick={async () => await mortgageProperty(sessionId, tile.name)}>
         {ownableData?.mortgaged ? "Unmortgage Property" : "Mortgage Property"}
       </button>
-      <button className={`text-sm rounded-md shadow-md 
+      {ownableData?.type === "property" ? <button className={`text-sm rounded-md shadow-md 
           ${ownableData?.housesAmount !== 5 ? "text-black bg-white hover:bg-gray-200 hover:cursor-pointer" : "bg-gray-300 text-gray-500 cursor-not-allowed"} `}
         onClick={async () => await buyHouse(sessionId, tile.name)}>
         {ownableData?.housesAmount === 4 ? "Buy Hotel" : "Buy House"}
-      </button>
-      <button className={`text-sm rounded-md shadow-md 
+      </button> : null}
+      {ownableData?.type === "property" ? <button className={`text-sm rounded-md shadow-md 
           ${ownableData?.housesAmount !== 0 ? "text-black bg-white hover:bg-gray-200 hover:cursor-pointer" : "bg-gray-300 text-gray-500 cursor-not-allowed"} `}
         onClick={async () => await sellHouse(sessionId, tile.name)}>
         {ownableData?.housesAmount === 5 ? "Sell Hotel" : "Sell House"}
-      </button>
+      </button> : null}
     </div>
   );
 }

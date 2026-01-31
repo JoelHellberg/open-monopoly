@@ -40,7 +40,7 @@ export default function PlayerDisplay(props: Props) {
           height: "2%",
           top: `${y}%`,
           left: `${x}%`,
-          backgroundColor: `#${playerData.color}`,
+          backgroundColor: `#${playerData.color || "000000"}`,
           transform: "translate(-50%, -50%)",
         }}
       ></div>
