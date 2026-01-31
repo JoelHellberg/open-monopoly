@@ -3,7 +3,7 @@
 import defaultBoard from "@/data/boards/default";
 import {
   assertPlayerActionAllowed,
-  calculateStreetRent,
+  calculateRent,
   getPlayerId,
   isPropertyForSale,
   setPlayersStatus,
@@ -64,15 +64,19 @@ async function handleLandingOnProperty(sessionId: string) {
   const gameData: GameData = await fetchGameData(sessionId);
   const rolledDoubles = gameData.diceOne == gameData.diceTwo;
 
+  // If player owns the property
   if (ownableData.owner === playerId) {
     if (rolledDoubles) await setPlayersStatus(sessionId, playerId, "PLAYING");
     else await setPlayersStatus(sessionId, playerId, "FINISHING");
     return;
   }
-
-  const rent = await calculateStreetRent(ownableData);
-
+  // Fetch owner
+  const ownerId = ownableData.owner;
+  const ownerData: Player = await fetchPlayerData(ownerId, sessionId);
+  const rent = await calculateRent(ownableData, ownerData, gameData.diceOne + gameData.diceTwo);
   playerData.money -= rent;
+  // Temporary until debted works
+  ownerData.money += rent;
 
   if (playerData.money >= 0) {
     if (rolledDoubles) playerData.status = "PLAYING";
@@ -81,6 +85,7 @@ async function handleLandingOnProperty(sessionId: string) {
   else playerData.status = "DEBTED";
 
   await updatePlayerData(playerId, sessionId, playerData);
+  await updatePlayerData(ownerId, sessionId, ownerData);
 }
 
 async function handleEvent(sessionId: string, tilePos: number) {
@@ -131,7 +136,7 @@ async function handleEvent(sessionId: string, tilePos: number) {
 
 export async function endPlayersTurn(sessionId: string, playerId: string) {
   const playerData: Player = await fetchPlayerData(playerId, sessionId);
-  if (playerData.status === "JAIL") console.log("Player is in jail");
+  if (playerData.status === "JAIL") console.log("Player is now in jail");
   else await updatePlayerStatus(sessionId, playerId)
   if (playerData.status === "PLAYING") return;
 

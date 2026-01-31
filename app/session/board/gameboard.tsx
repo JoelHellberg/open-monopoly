@@ -26,7 +26,7 @@ export default function GameBoard() {
   return (
     <div className="h-full w-full relative select-none">
       {selectedTile && (
-        <TileInfoPanel tile={selectedTile} onClose={() => setSelectedTile(null)}/>
+        <TileInfoPanel tile={selectedTile} onClose={() => setSelectedTile(null)} />
       )}
       <PlayersDisplay streetsPerSide={sPS} streetsBetweenCorners={sBC} />
       <div
@@ -38,21 +38,21 @@ export default function GameBoard() {
       >
         {/* Top */}
         {top.map((street) => (
-          <Tile key={street.id} street={street} side="top" onSelect={setSelectedTile}/>
+          <Tile key={street.id} street={street} side="top" onSelect={setSelectedTile} />
         ))}
 
         {/* Middle */}
         {Array.from({ length: 9 }, (_, i) => (
           <React.Fragment key={i}>
-            <Tile street={left[i]} side="left" onSelect={setSelectedTile}/>
+            <Tile street={left[i]} side="left" onSelect={setSelectedTile} />
             <div className="col-span-9"></div>
-            <Tile street={right[i]} side="right" onSelect={setSelectedTile}/>
+            <Tile street={right[i]} side="right" onSelect={setSelectedTile} />
           </React.Fragment>
         ))}
 
         {/* Bottom */}
         {bottom.map((street) => (
-          <Tile key={street.id} street={street} side="bottom" onSelect={setSelectedTile}/>
+          <Tile key={street.id} street={street} side="bottom" onSelect={setSelectedTile} />
         ))}
       </div>
     </div>
@@ -66,7 +66,7 @@ function Tile({
 }: {
   street: BoardTile;
   side: "top" | "right" | "bottom" | "left";
-   onSelect?: (tile: OwnableTile) => void;
+  onSelect?: (tile: OwnableTile) => void;
 }) {
   // Rotation based on side
   const rotation = {
@@ -116,14 +116,19 @@ function Tile({
                   className="font-bold z-50"
                   style={{
                     whiteSpace: "normal",
-                    writingMode: `${
-                      isHorizontal ? "horizontal-tb" : "vertical-rl"
-                    }`,
+                    writingMode: `${isHorizontal ? "horizontal-tb" : "vertical-rl"
+                      }`,
                     transform: `rotate(${isHorizontal ? -rotation : -180}deg)`,
                     textOrientation: "mixed",
                   }}
                 >
-                  x{ownableData?.housesAmount}
+                  {ownableData && ownableData.housesAmount > 0 && (
+                    <>
+                      {ownableData.housesAmount === 5 ? "Hotel"
+                        : ownableData.housesAmount === 1 ? "1 House"
+                          : `${ownableData.housesAmount} Houses`}
+                    </>
+                  )}
                 </p>
               )}
             </div>

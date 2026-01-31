@@ -10,6 +10,8 @@ import {
 } from "./database";
 import defaultBoard from "@/data/boards/default";
 
+const jailStatuses = ["JAIL", "JAIL1", "JAIL2", "JAIL3"];
+
 export async function getPlayerId(): Promise<string> {
   const { playerId: id } = await verifyGameSession();
   return id as string;
@@ -75,21 +77,21 @@ async function assertCanRollJail(sessionId: string): Promise<boolean> {
   const playerId: string = await getPlayerId();
   const playerData: Player = await fetchPlayerData(playerId, sessionId);
 
-  return ["JAIL1", "JAIL2", "JAIL3"].includes(playerData.status);
+  return jailStatuses.includes(playerData.status);
 }
 
 async function assertCanPayJail(sessionId: string): Promise<boolean> {
   const playerId: string = await getPlayerId();
   const playerData: Player = await fetchPlayerData(playerId, sessionId);
 
-  return ["JAIL1", "JAIL2", "JAIL3"].includes(playerData.status) && playerData.money >= 50;
+  return jailStatuses.includes(playerData.status) && playerData.money >= 50;
 }
 
 async function assertCanUseJailFreeCard(sessionId: string): Promise<boolean> {
   const playerId: string = await getPlayerId();
   const playerData: Player = await fetchPlayerData(playerId, sessionId);
 
-  return ["JAIL1", "JAIL2", "JAIL3"].includes(playerData.status) && playerData.jailFreeCards > 0;
+  return jailStatuses.includes(playerData.status) && playerData.jailFreeCards > 0;
 }
 
 async function assertCanBuyHouse(sessionId: string): Promise<boolean> {
@@ -184,7 +186,23 @@ export async function setPlayersStatus(
   await updatePlayerData(playerId, sessionId, playerData);
 }
 
-export async function calculateStreetRent(ownable: Ownable): Promise<number> {
-  // tillfälligt
-  return ownable.rent[0];
+export async function calculateRent(ownableData: Ownable, ownerData: Player, diceRoll?: number): Promise<number> {
+
+  if (ownableData.mortgaged) return 0;
+  if (jailStatuses.includes(ownerData.status)) return 0;
+  if (ownableData.type === "company" && diceRoll) {
+    const companiesOwned = ownerData.ownables.filter(el => defaultBoard.find(tile => tile.name === el)?.subtype === "company").length;
+    return ownableData.rent[companiesOwned - 1] * diceRoll;
+  }
+  if (ownableData.type === "transportation") {
+    const transportationOwned = ownerData.ownables.filter(el => defaultBoard.find(tile => tile.name === el)?.subtype === "transportation").length;
+    return ownableData.rent[transportationOwned - 1];
+  }
+  if (await hasMonopoly(ownableData, ownerData) && ownableData.housesAmount === 0) return ownableData.rent[0] * 2;
+  return ownableData.rent[ownableData.housesAmount];
+}
+
+export async function hasMonopoly(ownableData: Ownable, ownerData: Player): Promise<boolean> {
+  return ownableData.type === "property" && ownableData.owner === ownerData.id
+    && ownableData.familyMembers.every(el => ownerData.ownables.includes(el));
 }

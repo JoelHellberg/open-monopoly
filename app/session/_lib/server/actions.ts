@@ -9,6 +9,7 @@ import {
   getPlayerId,
   updatePlayerStatus,
   setPlayersStatus,
+  hasMonopoly,
 } from "./helperFunctions";
 import {
   fetchGameData,
@@ -229,9 +230,8 @@ export async function buyHouse(sessionId: string, tileName: string) {
   const playerId: string = await getPlayerId();
   const playerData: Player = await fetchPlayerData(playerId, sessionId);
   const ownableData: Ownable = await fetchOwnableData(tileName, sessionId);
-  const ownsFamily = ownableData.type === "property" && ownableData.owner === playerId
-    && ownableData.familyMembers.every(el => playerData.ownables.includes(el));
-  const canBuyHouse = playerData.money >= ownableData.houseCost && ownableData.housesAmount < 5 && ownsFamily;
+  const canBuyHouse = playerData.money >= ownableData.houseCost &&
+    ownableData.housesAmount < 5 && await hasMonopoly(ownableData, playerData);
 
   if (canBuyHouse) {
     // Update local objects
