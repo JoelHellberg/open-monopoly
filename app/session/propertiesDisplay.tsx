@@ -1,21 +1,16 @@
 "use client";
-import { useState } from "react";
 import { useGameData } from "./_lib/data/gameData";
 import defaultBoard from "@/data/boards/default";
 import type { Tile, PropertyTile, RailroadTile, UtilityTile, } from "@/types/board";
-import TileInfoPanel from "./board/tileInfoPanel";
 import { propertyColors } from "@/data/colors";
 
 type OwnableTile = PropertyTile | RailroadTile | UtilityTile;
 
-export default function PropertiesDisplay() {
+export default function PropertiesDisplay({ onSelectTile }: { onSelectTile: (tile: OwnableTile) => void }) {
   const ownPlayerId: string = useGameData((state) => state.ownPlayerId);
   const playerData = useGameData(
     (state) => state.players?.[ownPlayerId] ?? null
   );
-
-  const [selectedTile, setSelectedTile] =
-    useState<OwnableTile | null>(null);
 
   const ownedNames = new Set(playerData?.ownables ?? []);
 
@@ -29,15 +24,8 @@ export default function PropertiesDisplay() {
 
   const orderedOwnedTiles = [...properties, ...railroads, ...utilities];
 
-    return (
+  return (
     <>
-      {selectedTile && (
-        <TileInfoPanel
-          tile={selectedTile}
-          onClose={() => setSelectedTile(null)}
-        />
-      )}
-
       <div className="flex flex-col flex-1 bg-orange-400 rounded-lg text-center">
         <h2>Properties</h2>
 
@@ -45,7 +33,7 @@ export default function PropertiesDisplay() {
           <OwnedTile
             key={tile.name}
             tile={tile}
-            onClick={() => setSelectedTile(tile)}
+            onClick={() => onSelectTile(tile)}
           />
         ))}
       </div>

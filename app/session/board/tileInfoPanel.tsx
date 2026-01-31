@@ -14,10 +14,9 @@ interface Props {
 }
 
 export default function TileInfoPanel({ tile, onClose }: Props) {
-  const mortgageValue = tile.price / 2;
-  const sessionId = useParams().sessionId as string;
   const ownableData = useGameData((state) => state.ownables?.[tile.name]);
   const players = useGameData((state) => state.players);
+  const playerId = useGameData((state) => state.ownPlayerId);
 
   // Helper to get owner data if exists
   const ownerData = ownableData?.owner && players ? players[ownableData.owner] : undefined;
@@ -29,7 +28,7 @@ export default function TileInfoPanel({ tile, onClose }: Props) {
       {tile.subtype === "property" && <PropertyInfo tile={tile} ownableData={ownableData} ownerData={ownerData} />}
       {tile.subtype === "transportation" && <RailroadInfo tile={tile} ownableData={ownableData} ownerData={ownerData} />}
       {tile.subtype === "company" && <UtilityInfo tile={tile} ownableData={ownableData} ownerData={ownerData} />}
-      {ownableData?.owner === ownerData?.id && <SellButtons tile={tile} ownableData={ownableData} />}
+      {ownableData?.owner === playerId && <SellButtons tile={tile} ownableData={ownableData} />}
     </div>
   );
 }

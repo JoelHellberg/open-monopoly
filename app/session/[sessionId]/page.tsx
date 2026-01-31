@@ -8,25 +8,35 @@ import { useGameData } from "../_lib/data/gameData";
 import Settings from "../settings";
 import { useSessionSubscriptions } from "../_lib/client/database";
 
+import { useState } from "react";
+import TileInfoPanel from "../board/tileInfoPanel";
+import { PropertyTile, RailroadTile, UtilityTile } from "@/types/board";
+
+type OwnableTile = PropertyTile | RailroadTile | UtilityTile;
+
 export default function SessionPage() {
   useSessionSubscriptions();
   const gameData = useGameData((state) => state.data);
+  const [selectedTile, setSelectedTile] = useState<OwnableTile | null>(null);
 
   return (
     <div className="flex min-h-screen min-w-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
+      {selectedTile && (
+        <TileInfoPanel tile={selectedTile} onClose={() => setSelectedTile(null)} />
+      )}
       <main className="flex h-screen w-screen gap-3 p-2 [&>div]:rounded-lg">
         <div className="bg-yellow-400 flex flex-1">
           <GameChat />
         </div>
         <div className="relative h-full aspect-square bg-pink-400">
           <ActionsDisplay />
-          <GameBoard />
+          <GameBoard onSelectTile={setSelectedTile} />
         </div>
         <div className="bg-blue-400 flex flex-col flex-1 gap-5">
           <TurnDisplay />
           <div className="flex flex-col flex-2 bg-red-400 rounded-lg">
             {gameData && gameData.gameIsOn ? (
-              <PropertiesDisplay />
+              <PropertiesDisplay onSelectTile={setSelectedTile} />
             ) : (
               <Settings />
             )}

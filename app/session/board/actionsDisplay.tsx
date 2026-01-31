@@ -26,13 +26,13 @@ export default function ActionsDisplay() {
   const isOwnableTile = (tile: Tile | null): tile is PropertyTile | RailroadTile | UtilityTile => tile?.type === "ownable";
   const cost = isOwnableTile(tile) ? tile.price : 0;
   const canBuy = (playerData?.money ?? 0) >= cost;
-  const jailStatuses = ["JAIL", "JAIL1", "JAIL2", "JAIL3"];
+  const jailStatuses = ["JAIL1", "JAIL2", "JAIL3"];
   const canBuyOut = jailStatuses.includes(playerData?.status ?? "") && (playerData?.money ?? 0) >= 50;
 
   return (
     <div className="absolute inset-0 m-auto flex flex-col gap-5 items-center justify-center z-10 pointer-events-none select-none">
       <div className="m-auto flex flex-col gap-5 items-center justify-center pointer-events-auto">
-        {gameData && !gameData.gameIsOn ? (
+        {gameData && !gameData.gameIsOn && playerData?.id === gameData.host ? (
           <StartGame />
         ) : (
           <>
@@ -43,7 +43,7 @@ export default function ActionsDisplay() {
             {playerData && playerData.status === "PLAYING" && <ThrowDice />}
             {playerData && playerData.status === "BUYING" && <BuyProperty cost={cost} canBuy={canBuy} />}
             {playerData && playerData.status === "FINISHING" && <EndTurn />}
-            {playerData && jailStatuses.includes(playerData.status) &&
+            {playerData && jailStatuses.includes(playerData.status) && playerData.id === gameData?.playersInSession[gameData.currentPlayer] &&
               <InJail canBuyOut={canBuyOut} jailFreeCards={playerData.jailFreeCards ?? 0} />}
           </>
         )}

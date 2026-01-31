@@ -19,20 +19,40 @@ export async function addGameDataToDB(gameData: GameData): Promise<string> {
   return gameId;
 }
 
+export async function checkGameExists(sessionId: string): Promise<boolean> {
+  const rtdb = await getRTDBAdmin();
+  const snapshot = await rtdb.ref(`games/${sessionId}`).get();
+  return snapshot.exists();
+}
+
 export async function addPlayerToGame(userId: string, sessionId: string) {
   const rtdb = await getRTDBAdmin();
-  const playerData: Player = {
-    id: userId,
-    money: 1000,
-    ownables: [],
-    pos: 0,
-    status: "",
-    color: "",
-    doublesInRow: 0,
-    jailFreeCards: 0,
-  };
+  // Check if game has started
+  const gameRef = rtdb.ref(`games/${sessionId}`);
+  const gameSnapshot = await gameRef.get();
+  const gameData = gameSnapshot.val();
+  if (gameData.gameIsOn) {
+    throw new Error("Game has already started.");
+  }
+  // Check if player already exists
+  const playerRef = rtdb.ref(`games/${sessionId}/players/${userId}`);
+  const playerSnapshot = await playerRef.get();
 
-  await rtdb.ref(`games/${sessionId}/players/${userId}`).set(playerData);
+  if (!playerSnapshot.exists()) {
+    const playerData: Player = {
+      id: userId,
+      money: 1000,
+      ownables: [],
+      pos: 0,
+      status: "",
+      color: "",
+      doublesInRow: 0,
+      jailFreeCards: 0,
+    };
+
+    await playerRef.set(playerData);
+  }
+
   await rtdb.ref(`games/${sessionId}/playersInSession/${userId}`).set(true);
 }
 

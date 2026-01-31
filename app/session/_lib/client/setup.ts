@@ -44,3 +44,25 @@ export async function hostGame(board: Tile[]) {
   await createGameSession(hostPlayerId);
   window.location.href = "/session/" + sessionId;
 }
+
+export async function joinGame(sessionId: string) {
+  const isValid = /^[A-Z0-9]{6}$/.test(sessionId);
+  if (!isValid) {
+    throw new Error("Invalid Session ID. Must be 6 alphanumeric uppercase characters.");
+  }
+
+  const { checkGameExists } = await import("../server/setup");
+  const exists = await checkGameExists(sessionId);
+
+  if (!exists) {
+    throw new Error("Game session not found.");
+  }
+
+  const { userId: playerId } = await verifySession();
+  const joiningPlayerId = playerId as string;
+
+  await addPlayerToGame(joiningPlayerId, sessionId);
+  await createGameSession(joiningPlayerId);
+
+  window.location.href = "/session/" + sessionId;
+}

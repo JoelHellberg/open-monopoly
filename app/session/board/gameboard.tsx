@@ -2,17 +2,15 @@
 import defaultBoard from "@/data/boards/default";
 import type { Tile as BoardTile } from "@/types/board";
 import { propertyColors } from "@/data/colors";
-import React, { useState } from "react";
+import React from "react";
 import PlayersDisplay from "./players/playersDisplay";
 import { useGameData } from "../_lib/data/gameData";
-import TileInfoPanel from "./tileInfoPanel";
 import type { PropertyTile, RailroadTile, UtilityTile, } from "@/types/board";
 
 type OwnableTile = PropertyTile | RailroadTile | UtilityTile;
 
-export default function GameBoard() {
+export default function GameBoard({ onSelectTile }: { onSelectTile: (tile: OwnableTile) => void }) {
   const board = defaultBoard;
-  const [selectedTile, setSelectedTile] = useState<OwnableTile | null>(null);
 
   const sPS = board.length / 4 + 1; // Streets Per Side
   const sBC = sPS - 2; // Streets Between Corners
@@ -25,9 +23,6 @@ export default function GameBoard() {
 
   return (
     <div className="h-full w-full relative select-none">
-      {selectedTile && (
-        <TileInfoPanel tile={selectedTile} onClose={() => setSelectedTile(null)} />
-      )}
       <PlayersDisplay streetsPerSide={sPS} streetsBetweenCorners={sBC} />
       <div
         className="grid h-full w-full"
@@ -38,21 +33,21 @@ export default function GameBoard() {
       >
         {/* Top */}
         {top.map((street) => (
-          <Tile key={street.id} street={street} side="top" onSelect={setSelectedTile} />
+          <Tile key={street.id} street={street} side="top" onSelect={onSelectTile} />
         ))}
 
         {/* Middle */}
         {Array.from({ length: 9 }, (_, i) => (
           <React.Fragment key={i}>
-            <Tile street={left[i]} side="left" onSelect={setSelectedTile} />
+            <Tile street={left[i]} side="left" onSelect={onSelectTile} />
             <div className="col-span-9"></div>
-            <Tile street={right[i]} side="right" onSelect={setSelectedTile} />
+            <Tile street={right[i]} side="right" onSelect={onSelectTile} />
           </React.Fragment>
         ))}
 
         {/* Bottom */}
         {bottom.map((street) => (
-          <Tile key={street.id} street={street} side="bottom" onSelect={setSelectedTile} />
+          <Tile key={street.id} street={street} side="bottom" onSelect={onSelectTile} />
         ))}
       </div>
     </div>
