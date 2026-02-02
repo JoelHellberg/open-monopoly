@@ -315,3 +315,38 @@ export async function goToNextCardSpace(sessionId: string) {
 
   await processLanding(sessionId, nextCardSpaceIndex);
 }
+
+export async function bankrupt(sessionId: string) {
+  const playerId: string = await getPlayerId();
+  const playerData: Player = await fetchPlayerData(playerId, sessionId);
+  const gameData: GameData = await fetchGameData(sessionId);
+
+  // Mark player as OUT
+  playerData.status = "OUT";
+
+  // Reset all properties owned by the player
+  if (playerData.ownables) {
+    for (const ownable of playerData.ownables) {
+      const ownableData: Ownable = await fetchOwnableData(ownable, sessionId);
+      ownableData.owner = "";
+      ownableData.mortgaged = false;
+      ownableData.housesAmount = 0;
+      console.log("ownableData", ownableData);
+      await updateOwnableData(ownable, sessionId, ownableData);
+    }
+  }
+
+  // Clear player data
+  playerData.ownables = [];
+  playerData.money = 0;
+  playerData.doublesInRow = 0;
+  console.log("playerData", playerData);
+  // Save updates in correct order
+  await updatePlayerData(playerId, sessionId, playerData);
+  console.log("playerData updated");
+  // Finally end the turn
+  await endPlayersTurn(sessionId, playerId);
+  // Remove player from active list
+  // gameData.playersInSession = gameData.playersInSession.filter((id) => id !== playerId);
+  // await updateGameData(sessionId, gameData);
+}
