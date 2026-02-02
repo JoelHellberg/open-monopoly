@@ -13,6 +13,7 @@ export default function PlayerDisplay(props: Props) {
   );
 
   if (!playerData) return null;
+  if (playerData.status === "OUT") return null;
 
   const playerRow = getPlayerRow(playerData.pos, props.streetsPerSide);
   const streetWidth = 100 / (props.streetsPerSide + 2);

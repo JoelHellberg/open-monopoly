@@ -121,7 +121,7 @@ async function walkTheBoard(sessionId: string, playerId: string, rtdb: any, play
 
   // Calculate new player position
   let newPlayerPos =
-    (currentPos + playerMovement) % (defaultBoard.length - 1);
+    (currentPos + playerMovement) % (defaultBoard.length);
 
   // Calculate number of doubles in a row
   let newDoublesInRow = playerData.doublesInRow;
@@ -283,39 +283,6 @@ export async function callUpdatePlayerStatus(sessionId: string) {
   updatePlayerStatus(sessionId, playerId);
 }
 
-//extra developer actions
-
-export async function goToJail(sessionId: string) {
-  const playerId: string = await getPlayerId();
-  const playerData: Player = await fetchPlayerData(playerId, sessionId);
-  playerData.status = "JAIL";
-  playerData.pos = defaultBoard.findIndex((tile) => tile.subtype === "jail");
-  await updatePlayerData(playerId, sessionId, playerData);
-  endPlayersTurn(sessionId, playerId);
-}
-
-export async function goToNextCardSpace(sessionId: string) {
-
-  const playerId: string = await getPlayerId();
-  const playerData: Player = await fetchPlayerData(playerId, sessionId);
-  const tile = defaultBoard[playerData.pos];
-
-  const nextCardSpaceIndex = defaultBoard.findIndex(
-    (tile) => tile.type === "event" && (tile.subtype === "chest" || tile.subtype === "chance") && tile.id > playerData.pos + 1
-  );
-
-  if (nextCardSpaceIndex === -1) {
-    throw new Error("No card space found");
-  }
-
-  playerData.pos = nextCardSpaceIndex;
-
-  // Write updates back to the database
-  await updatePlayerData(playerId, sessionId, playerData);
-
-  await processLanding(sessionId, nextCardSpaceIndex);
-}
-
 export async function bankrupt(sessionId: string) {
   const playerId: string = await getPlayerId();
   const playerData: Player = await fetchPlayerData(playerId, sessionId);
@@ -349,4 +316,37 @@ export async function bankrupt(sessionId: string) {
   // Remove player from active list
   // gameData.playersInSession = gameData.playersInSession.filter((id) => id !== playerId);
   // await updateGameData(sessionId, gameData);
+}
+
+//extra developer actions
+
+export async function goToJail(sessionId: string) {
+  const playerId: string = await getPlayerId();
+  const playerData: Player = await fetchPlayerData(playerId, sessionId);
+  playerData.status = "JAIL";
+  playerData.pos = defaultBoard.findIndex((tile) => tile.subtype === "jail");
+  await updatePlayerData(playerId, sessionId, playerData);
+  endPlayersTurn(sessionId, playerId);
+}
+
+export async function goToNextCardSpace(sessionId: string) {
+
+  const playerId: string = await getPlayerId();
+  const playerData: Player = await fetchPlayerData(playerId, sessionId);
+  const tile = defaultBoard[playerData.pos];
+
+  const nextCardSpaceIndex = defaultBoard.findIndex(
+    (tile) => tile.type === "event" && (tile.subtype === "chest" || tile.subtype === "chance") && tile.id > playerData.pos + 1
+  );
+
+  if (nextCardSpaceIndex === -1) {
+    throw new Error("No card space found");
+  }
+
+  playerData.pos = nextCardSpaceIndex;
+
+  // Write updates back to the database
+  await updatePlayerData(playerId, sessionId, playerData);
+
+  await processLanding(sessionId, nextCardSpaceIndex);
 }

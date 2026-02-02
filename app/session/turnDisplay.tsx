@@ -16,7 +16,7 @@ export default function TurnDisplay() {
           return (
             <Player
               key={playerId}
-              username={playerId}
+              username={player.name || playerId}
               money={player.money}
               color={player.color}
             />

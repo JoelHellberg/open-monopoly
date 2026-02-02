@@ -25,7 +25,7 @@ export async function checkGameExists(sessionId: string): Promise<boolean> {
   return snapshot.exists();
 }
 
-export async function addPlayerToGame(userId: string, sessionId: string, color: string) {
+export async function addPlayerToGame(userId: string, sessionId: string, color: string, name: string) {
   const rtdb = await getRTDBAdmin();
   // Check if game has started
   const gameRef = rtdb.ref(`games/${sessionId}`);
@@ -41,6 +41,7 @@ export async function addPlayerToGame(userId: string, sessionId: string, color: 
   if (!playerSnapshot.exists()) {
     const playerData: Player = {
       id: userId,
+      name: name,
       money: 1000,
       ownables: [],
       pos: 0,
@@ -52,8 +53,11 @@ export async function addPlayerToGame(userId: string, sessionId: string, color: 
 
     await playerRef.set(playerData);
   } else {
-    // Update color if player exists!
-    await playerRef.child('color').set(color);
+    // Update color and name if player exists!
+    await playerRef.update({
+      color: color,
+      name: name
+    });
   }
 
   await rtdb.ref(`games/${sessionId}/playersInSession/${userId}`).set(true);

@@ -125,7 +125,7 @@ function Tile({
               )}
             </div>
           )}
-          {ownableData && ownableData.owner != "" && (
+          {ownableData && ownableData.owner != "" && !ownableData.mortgaged && (
             <div
               className={
                 "absolute aspect-square rounded-full border border-white border-2 " +
@@ -134,6 +134,25 @@ function Tile({
                   : "h-2/5 left-0 -translate-x-1/2")
               }
               style={{ backgroundColor: `#${useGameData.getState().players?.[ownableData.owner]?.color ?? "000000"}` }}
+            />
+          )}
+          {ownableData && ownableData.owner != "" && ownableData.mortgaged && (
+            <div
+              className={
+                "absolute aspect-square rounded-full border border-white border-2 " +
+                (isHorizontal
+                  ? "w-1/3 top-0 -translate-y-1/2 "
+                  : "h-2/5 left-0 -translate-x-1/2 ")
+              }
+              style={{
+                backgroundImage: `repeating-linear-gradient(
+                  45deg,
+                  #${useGameData.getState().players?.[ownableData.owner]?.color ?? "000000"},
+                  #${useGameData.getState().players?.[ownableData.owner]?.color ?? "000000"} 4px,
+                  rgba(0, 0, 0, 0.25) 4px,
+                  rgba(0, 0, 0, 0.25) 8px
+                )`,
+              }}
             />
           )}
         </>

@@ -12,6 +12,7 @@ export type GameData = {
 export type Players = Record<string, Player>;
 export type Player = {
   id: string;
+  name: string;
   money: number;
   ownables: string[];
   pos: number;

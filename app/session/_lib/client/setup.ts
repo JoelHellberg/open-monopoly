@@ -9,7 +9,7 @@ import {
 } from "../server/setup";
 import { createGameSession, verifySession } from "@/app/_lib/session";
 
-export async function hostGame(board: Tile[], color: string) {
+export async function hostGame(board: Tile[], color: string, name: string) {
   const { userId: playerId } = await verifySession();
   const hostPlayerId = playerId as string;
 
@@ -23,7 +23,7 @@ export async function hostGame(board: Tile[], color: string) {
   };
 
   const sessionId = await addGameDataToDB(gameData);
-  await addPlayerToGame(hostPlayerId, sessionId, color);
+  await addPlayerToGame(hostPlayerId, sessionId, color, name);
 
   for (const street of board) {
     if (street.type === "ownable") {
@@ -45,7 +45,7 @@ export async function hostGame(board: Tile[], color: string) {
   window.location.href = "/session/" + sessionId;
 }
 
-export async function joinGame(sessionId: string, color: string) {
+export async function joinGame(sessionId: string, color: string, name: string) {
   const isValid = /^[A-Z0-9]{6}$/.test(sessionId);
   if (!isValid) {
     throw new Error("Invalid Session ID. Must be 6 alphanumeric uppercase characters.");
@@ -61,7 +61,7 @@ export async function joinGame(sessionId: string, color: string) {
   const { userId: playerId } = await verifySession();
   const joiningPlayerId = playerId as string;
 
-  await addPlayerToGame(joiningPlayerId, sessionId, color);
+  await addPlayerToGame(joiningPlayerId, sessionId, color, name);
   await createGameSession(joiningPlayerId);
 
   window.location.href = "/session/" + sessionId;
