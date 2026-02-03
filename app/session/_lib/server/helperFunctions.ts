@@ -186,10 +186,12 @@ export async function setPlayersStatus(
   await updatePlayerData(playerId, sessionId, playerData);
 }
 
-export async function calculateRent(ownableData: Ownable, ownerData: Player, diceRoll?: number): Promise<number> {
+export async function calculateRent(ownableData: Ownable, ownerData: Player, playerId: string, diceRoll?: number): Promise<number> {
 
   if (ownableData.mortgaged) return 0;
   if (jailStatuses.includes(ownerData.status)) return 0;
+  if (ownableData.freeRent.includes(playerId)) return 0;
+
   if (ownableData.type === "company" && diceRoll) {
     const companiesOwned = ownerData.ownables.filter(el => defaultBoard.find(tile => tile.name === el)?.subtype === "company").length;
     return ownableData.rent[companiesOwned - 1] * diceRoll;

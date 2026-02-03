@@ -33,6 +33,8 @@ export type Ownable = {
   price: number;
   houseCost: number;
   rent: number[];
+  freeRent: string[];
+  incomePercent: Record<string, number>;
 };
 
 export type GameMessage = {

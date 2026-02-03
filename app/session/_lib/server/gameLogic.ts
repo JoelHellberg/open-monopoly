@@ -73,10 +73,15 @@ async function handleLandingOnProperty(sessionId: string) {
   // Fetch owner
   const ownerId = ownableData.owner;
   const ownerData: Player = await fetchPlayerData(ownerId, sessionId);
-  const rent = await calculateRent(ownableData, ownerData, gameData.diceOne + gameData.diceTwo);
-  playerData.money -= rent;
+  const totalRent = await calculateRent(ownableData, ownerData, playerId, gameData.diceOne + gameData.diceTwo);
+  playerData.money -= totalRent;
   // Temporary until debted works
-  ownerData.money += rent;
+  // Calculate rent for all players with incomePercent
+  Object.entries(ownableData.incomePercent).forEach(async ([incomePlayerId, percent]) => {
+    const incomePlayerData = await fetchPlayerData(incomePlayerId, sessionId);
+    incomePlayerData.money += Math.round(totalRent * (percent / 100));
+    await updatePlayerData(incomePlayerId, sessionId, incomePlayerData);
+  });
 
   if (playerData.money >= 0) {
     if (rolledDoubles) playerData.status = "PLAYING";

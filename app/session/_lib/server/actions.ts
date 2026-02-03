@@ -176,6 +176,7 @@ export async function purchase(sessionId: string) {
   // Update local objects
   playerData.ownables.push(ownableId);
   ownableData.owner = playerId;
+  ownableData.incomePercent = { [playerId]: 100 };
 
   // Write updates back to the database
   await updatePlayerData(playerId, sessionId, playerData);
@@ -199,6 +200,8 @@ export async function sellProperty(sessionId: string, tileName: string) {
     // Update local objects
     playerData.money += ownableData.price / 2;
     ownableData.owner = "";
+    ownableData.incomePercent = {};
+    ownableData.freeRent = [];
     playerData.ownables = playerData.ownables.filter((ownable) => ownable !== tileName);
 
     // Write updates back to the database
