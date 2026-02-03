@@ -21,8 +21,9 @@ export default function GameChat() {
     if (!inputValue.trim()) return;
 
     const message = inputValue;
+    const timeStamp = Date.now();
     setInputValue("");
-    await sendChatMessage(sessionId, message);
+    await sendChatMessage(sessionId, message, timeStamp);
   };
 
   return (

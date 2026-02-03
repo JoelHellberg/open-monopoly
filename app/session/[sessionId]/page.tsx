@@ -11,9 +11,9 @@ import { useSessionSubscriptions } from "../_lib/client/database";
 import { useState } from "react";
 import TileInfoPanel from "../board/tileInfoPanel";
 import { PropertyTile, RailroadTile, UtilityTile } from "@/types/board";
-import TradeButton from "../tradeButton";
 import { useParams } from "next/navigation";
 import { bankrupt } from "../_lib/server/actions";
+import TradesDisplay from "../trades/tradesDisplay";
 
 type OwnableTile = PropertyTile | RailroadTile | UtilityTile;
 
@@ -51,7 +51,7 @@ export default function SessionPage() {
                 {copied ? (<><span>✅ Copied!</span></>) : (<><span>📋 Copy</span></>)}
               </button>
             </div>
-            <TradeButton />
+            <TradesDisplay />
             <GameChat />
           </div>
         </div>

@@ -10,4 +10,16 @@ export type GameDataRTDB = {
     playerId: string;
     timeStamp: number;
   }>;
+  trades?: Record<string, {
+    offeringPlayer: string;
+    receivingPlayer: string;
+    offeringProperties: string[];
+    receivingProperties: string[];
+    offeringMoney: number;
+    receivingMoney: number;
+    offeringFreeRent: string[];
+    receivingFreeRent: string[];
+    offeringSharedIncome: [string, number][];
+    receivingSharedIncome: [string, number][];
+  }>;
 };

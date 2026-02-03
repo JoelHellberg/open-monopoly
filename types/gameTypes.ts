@@ -12,6 +12,20 @@ export type GameData = {
     playerId: string;
     timeStamp: number;
   }>;
+  trades?: Record<string, Trade>;
+};
+
+export type Trade = {
+  offeringPlayer: string;
+  receivingPlayer: string;
+  offeringProperties: string[];
+  receivingProperties: string[];
+  offeringMoney: number;
+  receivingMoney: number;
+  offeringFreeRent: string[];
+  receivingFreeRent: string[];
+  offeringSharedIncome: [string, number][];
+  receivingSharedIncome: [string, number][];
 };
 
 export type Players = Record<string, Player>;

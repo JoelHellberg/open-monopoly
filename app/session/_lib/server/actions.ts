@@ -3,7 +3,7 @@
 import { getRTDBAdmin } from "@/app/_lib/firebaseAdmin";
 import defaultBoard from "@/data/boards/default";
 import { endPlayersTurn, processLanding, startPlayersTurn } from "./gameLogic";
-import { GameData, Ownable, Player } from "@/types/gameTypes";
+import { GameData, Ownable, Player, Trade } from "@/types/gameTypes";
 import {
   assertPlayerActionAllowed,
   getPlayerId,
@@ -321,7 +321,7 @@ export async function bankrupt(sessionId: string) {
   // await updateGameData(sessionId, gameData);
 }
 
-export async function sendChatMessage(sessionId: string, message: string) {
+export async function sendChatMessage(sessionId: string, message: string, timeStamp: number) {
   const playerId: string = await getPlayerId();
   const rtdb = await getRTDBAdmin();
 
@@ -329,8 +329,149 @@ export async function sendChatMessage(sessionId: string, message: string) {
   await messageRef.set({
     messageContent: message,
     playerId: playerId,
-    timeStamp: Date.now(),
+    timeStamp: timeStamp,
   });
+}
+
+export async function createTrade(sessionId: string, trade: Trade) {
+  const rtdb = await getRTDBAdmin();
+  const tradeRef = rtdb.ref(`games/${sessionId}/trades`).push();
+  await tradeRef.set(trade);
+}
+
+// Trade Actions
+
+export async function acceptTrade(sessionId: string, tradeId: string) {
+  const playerId: string = await getPlayerId();
+  const rtdb = await getRTDBAdmin();
+
+  const tradeRef = rtdb.ref(`games/${sessionId}/trades/${tradeId}`);
+  const tradeSnapshot = await tradeRef.get();
+
+  if (!tradeSnapshot.exists()) {
+    throw new Error("Trade not found");
+  }
+
+  const tradeData: Trade = tradeSnapshot.val();
+
+  if (tradeData.receivingPlayer !== playerId) {
+    throw new Error("You are not the receiving player");
+  }
+
+  const offeringPlayer: Player = await fetchPlayerData(tradeData.offeringPlayer, sessionId);
+  const receivingPlayer: Player = await fetchPlayerData(tradeData.receivingPlayer, sessionId);
+
+  // Default arrays to empty if undefined (firebase quirks)
+  tradeData.offeringProperties = tradeData.offeringProperties || [];
+  tradeData.receivingProperties = tradeData.receivingProperties || [];
+  tradeData.offeringFreeRent = tradeData.offeringFreeRent || [];
+  tradeData.receivingFreeRent = tradeData.receivingFreeRent || [];
+  tradeData.offeringSharedIncome = tradeData.offeringSharedIncome || [];
+  tradeData.receivingSharedIncome = tradeData.receivingSharedIncome || [];
+
+  // Validate money
+  if (offeringPlayer.money < tradeData.offeringMoney) throw new Error("Offering player usually don't have enough money");
+  if (receivingPlayer.money < tradeData.receivingMoney) throw new Error("You don't have enough money");
+
+  // Validate properties
+  const allOfferingPropsOwned = tradeData.offeringProperties.every(prop => offeringPlayer.ownables.includes(prop));
+  const allReceivingPropsOwned = tradeData.receivingProperties.every(prop => receivingPlayer.ownables.includes(prop));
+  if (!allOfferingPropsOwned) throw new Error("Offering player doesn't own all offered properties");
+  if (!allReceivingPropsOwned) throw new Error("You don't own all requested properties");
+
+  // Execute Trade - Money
+  offeringPlayer.money -= tradeData.offeringMoney;
+  offeringPlayer.money += tradeData.receivingMoney;
+
+  receivingPlayer.money -= tradeData.receivingMoney;
+  receivingPlayer.money += tradeData.offeringMoney;
+
+  // Execute Trade - Properties
+  // Remove from owners
+  offeringPlayer.ownables = offeringPlayer.ownables.filter(prop => !tradeData.offeringProperties.includes(prop));
+  receivingPlayer.ownables = receivingPlayer.ownables.filter(prop => !tradeData.receivingProperties.includes(prop));
+
+  // Add to new owners
+  offeringPlayer.ownables.push(...tradeData.receivingProperties);
+  receivingPlayer.ownables.push(...tradeData.offeringProperties);
+
+  // Update Property Ownership Data
+  for (const prop of tradeData.offeringProperties) {
+    const propData: Ownable = await fetchOwnableData(prop, sessionId);
+    propData.owner = receivingPlayer.id;
+    await updateOwnableData(prop, sessionId, propData);
+  }
+
+  for (const prop of tradeData.receivingProperties) {
+    const propData: Ownable = await fetchOwnableData(prop, sessionId);
+    propData.owner = offeringPlayer.id;
+    await updateOwnableData(prop, sessionId, propData);
+  }
+
+  // Handle Free Rent
+  // Add offered free rent to receiver
+  for (const prop of tradeData.offeringFreeRent) {
+    const propData: Ownable = await fetchOwnableData(prop, sessionId);
+    if (!propData.freeRent) propData.freeRent = [];
+    propData.freeRent.push(receivingPlayer.id);
+    await updateOwnableData(prop, sessionId, propData);
+  }
+  // Add requested free rent to offerer
+  for (const prop of tradeData.receivingFreeRent) {
+    const propData: Ownable = await fetchOwnableData(prop, sessionId);
+    if (!propData.freeRent) propData.freeRent = [];
+    propData.freeRent.push(offeringPlayer.id);
+    await updateOwnableData(prop, sessionId, propData);
+  }
+
+  // Handle Shared Income
+  // Add offered shared income to receiver
+  for (const [prop, percent] of tradeData.offeringSharedIncome) {
+    const propData: Ownable = await fetchOwnableData(prop, sessionId);
+    if (!propData.incomePercent) propData.incomePercent = { [propData.owner]: 100 };
+    propData.incomePercent[receivingPlayer.id] = (propData.incomePercent[receivingPlayer.id] || 0) + percent;
+    await updateOwnableData(prop, sessionId, propData);
+  }
+  // Add requested shared income to offerer
+  for (const [prop, percent] of tradeData.receivingSharedIncome) {
+    const propData: Ownable = await fetchOwnableData(prop, sessionId);
+    if (!propData.incomePercent) propData.incomePercent = { [propData.owner]: 100 };
+    propData.incomePercent[offeringPlayer.id] = (propData.incomePercent[offeringPlayer.id] || 0) + percent;
+    await updateOwnableData(prop, sessionId, propData);
+  }
+
+  // Save Player Data
+  await updatePlayerData(offeringPlayer.id, sessionId, offeringPlayer);
+  await updatePlayerData(receivingPlayer.id, sessionId, receivingPlayer);
+
+  // Use updatePlayerStatus to refresh potential UI states if necessary
+  // No strict 'status' change but refreshes help
+  updatePlayerStatus(sessionId, offeringPlayer.id);
+  updatePlayerStatus(sessionId, receivingPlayer.id);
+
+  // Remove Trade
+  await tradeRef.remove();
+}
+
+export async function cancelTrade(sessionId: string, tradeId: string) {
+  const playerId: string = await getPlayerId();
+  const rtdb = await getRTDBAdmin();
+
+  const tradeRef = rtdb.ref(`games/${sessionId}/trades/${tradeId}`);
+  const tradeSnapshot = await tradeRef.get();
+
+  if (!tradeSnapshot.exists()) {
+    throw new Error("Trade not found");
+  }
+
+  const tradeData: Trade = tradeSnapshot.val();
+
+  // Allow cancellation if you are the one who offered OR the one receiving (Deny)
+  if (tradeData.offeringPlayer !== playerId && tradeData.receivingPlayer !== playerId) {
+    throw new Error("You do not have permission to cancel this trade");
+  }
+
+  await tradeRef.remove();
 }
 
 //

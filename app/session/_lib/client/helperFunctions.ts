@@ -10,6 +10,7 @@ export function normalizeGameData(
       ? Object.keys(raw.playersInSession)
       : [],
     gameChatMessages: raw.gameChatMessages ?? {},
+    trades: raw.trades ?? {},
   };
 }
 
