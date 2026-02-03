@@ -321,7 +321,23 @@ export async function bankrupt(sessionId: string) {
   // await updateGameData(sessionId, gameData);
 }
 
-//extra developer actions
+export async function sendChatMessage(sessionId: string, message: string) {
+  const playerId: string = await getPlayerId();
+  const rtdb = await getRTDBAdmin();
+
+  const messageRef = rtdb.ref(`games/${sessionId}/gameChatMessages`).push();
+  await messageRef.set({
+    messageContent: message,
+    playerId: playerId,
+    timeStamp: Date.now(),
+  });
+}
+
+//
+//
+// Extra developer actions
+//
+// Remove when in production
 
 export async function goToJail(sessionId: string) {
   const playerId: string = await getPlayerId();

@@ -7,6 +7,11 @@ export type GameData = {
   currentPlayer: number;
   playersInSession: string[];
   gameIsOn: boolean;
+  gameChatMessages?: Record<string, {
+    messageContent: string;
+    playerId: string;
+    timeStamp: number;
+  }>;
 };
 
 export type Players = Record<string, Player>;

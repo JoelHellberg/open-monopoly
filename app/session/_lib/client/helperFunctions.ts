@@ -9,6 +9,7 @@ export function normalizeGameData(
     playersInSession: raw.playersInSession
       ? Object.keys(raw.playersInSession)
       : [],
+    gameChatMessages: raw.gameChatMessages ?? {},
   };
 }
 

@@ -5,5 +5,9 @@ export type GameDataRTDB = {
   currentPlayer: number;
   playersInSession?: Record<string, true>;
   gameIsOn: boolean;
-  gameChatMessages?: Record<string, string>;
+  gameChatMessages?: Record<string, {
+    messageContent: string;
+    playerId: string;
+    timeStamp: number;
+  }>;
 };
