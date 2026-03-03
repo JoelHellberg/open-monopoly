@@ -1,5 +1,12 @@
 import { Timestamp } from "firebase/firestore";
 
+export type AuctionInfo = {
+  tile: string;                       // ownable id
+  currentBid: number;
+  highestBidderId: string;             // player id
+  participants: string[];            // all players taking part
+};
+
 export type GameData = {
   diceOne: number;
   diceTwo: number;
@@ -13,6 +20,9 @@ export type GameData = {
     timeStamp: number;
   }>;
   trades?: Record<string, Trade>;
+
+  // contains auction state when an auction is active
+  auction?: AuctionInfo;
 };
 
 export type Trade = {

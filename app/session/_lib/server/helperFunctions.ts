@@ -33,6 +33,8 @@ export async function assertPlayerActionAllowed(
       return await assertCanThrowDice(sessionId);
     case "BUY_PROPERTY":
       return await assertCanBuyProperty(sessionId);
+    case "AUCTION":
+      return await assertCanAuction(sessionId);
     case "END_TURN":
       return true;
     case "ROLL_JAIL":
@@ -92,6 +94,16 @@ async function assertCanUseJailFreeCard(sessionId: string): Promise<boolean> {
   const playerData: Player = await fetchPlayerData(playerId, sessionId);
 
   return jailStatuses.includes(playerData.status) && playerData.jailFreeCards > 0;
+}
+
+async function assertCanAuction(sessionId: string): Promise<boolean> {
+  // we allow auction if the current tile is an ownable and unowned
+  const playerId: string = await getPlayerId();
+  const playerData: Player = await fetchPlayerData(playerId, sessionId);
+  const street = defaultBoard[playerData.pos];
+  if (street.type !== "ownable") return false;
+  const ownableData: Ownable = await fetchOwnableData(street.name, sessionId);
+  return ownableData.owner === "";
 }
 
 async function assertCanBuyHouse(sessionId: string): Promise<boolean> {

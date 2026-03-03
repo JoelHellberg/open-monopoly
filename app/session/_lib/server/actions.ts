@@ -185,9 +185,59 @@ export async function purchase(sessionId: string) {
   updatePlayerStatus(sessionId, playerId);
 }
 
-export async function auction() { }
+export async function auction(sessionId: string) {
+  if (!(await assertPlayerActionAllowed("AUCTION", sessionId))) return;
 
-export async function bidAuction() { }
+  const playerId: string = await getPlayerId();
+  const playerData: Player = await fetchPlayerData(playerId, sessionId);
+  const gameData: GameData = await fetchGameData(sessionId);
+  const tile = defaultBoard[playerData.pos];
+
+  const ownableId = tile.name;
+  const ownableData: Ownable = await fetchOwnableData(ownableId, sessionId);
+
+  // prepare auction state in game data
+  gameData.auction = {
+    tile: ownableId,
+    currentBid: ownableData.price / 2, // start at half price
+    highestBidderId: "",
+    participants: [...gameData.playersInSession],
+  };
+
+  // update global game data with auction info
+  await updateGameData(sessionId, gameData);
+
+  // set all players into auction status so their UI can react
+  for (const pid of gameData.playersInSession) {
+    await setPlayersStatus(sessionId, pid, "AUCTION");
+  }
+}
+
+export async function bidAuction(sessionId: string, amount: number) {
+  const playerId: string = await getPlayerId();
+  const gameData: GameData = await fetchGameData(sessionId);
+
+  if (!gameData.auction) {
+    throw new Error("No auction in progress");
+  }
+
+  // must beat current bid
+  if (amount <= gameData.auction.currentBid) {
+    throw new Error("Bid must be higher than current bid");
+  }
+
+  // ensure bidder has enough money
+  const bidder: Player = await fetchPlayerData(playerId, sessionId);
+  if (bidder.money < amount) {
+    throw new Error("Not enough money to place bid");
+  }
+
+  gameData.auction.currentBid = amount;
+  gameData.auction.highestBidderId = playerId;
+
+  await updateGameData(sessionId, gameData);
+}
+
 
 export async function sellProperty(sessionId: string, tileName: string) {
   if (!(await assertPlayerActionAllowed("SELL_PROPERTY", sessionId))) return;

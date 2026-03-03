@@ -4,6 +4,7 @@ import { useGameData } from "../_lib/data/gameData";
 import {
   endTurn,
   purchase,
+  auction,
   startGame,
   throwDice,
   callUpdatePlayerStatus,
@@ -12,12 +13,17 @@ import {
   goToJail,
   goToNextCardSpace,
   useJailFreeCard,
+  bidAuction,
 } from "../_lib/server/actions";
 import { useParams } from "next/navigation";
 import defaultBoard from "@/data/boards/default";
 import type { PropertyTile, RailroadTile, UtilityTile, Tile } from "@/types/board";
+import { useState } from "react";
 
 export default function ActionsDisplay() {
+  const params = useParams();
+  const sessionId = params.sessionId as string;
+
   const gameData = useGameData((state) => state.data);
   const playerId = useGameData((state) => state.ownPlayerId);
   const playerData = useGameData((state) => state.players?.[playerId] ?? null);
@@ -30,25 +36,30 @@ export default function ActionsDisplay() {
   const canBuyOut = jailStatuses.includes(playerData?.status ?? "") && (playerData?.money ?? 0) >= 50;
 
   return (
-    <div className="absolute inset-0 m-auto flex flex-col gap-5 items-center justify-center z-10 pointer-events-none select-none">
-      <div className="m-auto flex flex-col gap-5 items-center justify-center pointer-events-auto">
-        {gameData && !gameData.gameIsOn && playerData?.id === gameData.host ? (
-          <StartGame />
-        ) : (
-          <>
-            <div className="flex gap-5">
-              <Dice numberOfSides={gameData?.diceOne} />
-              <Dice numberOfSides={gameData?.diceTwo} />
-            </div>
-            {playerData && playerData.status === "PLAYING" && <ThrowDice />}
-            {playerData && playerData.status === "BUYING" && <BuyProperty cost={cost} canBuy={canBuy} />}
-            {playerData && playerData.status === "FINISHING" && <EndTurn />}
-            {playerData && jailStatuses.includes(playerData.status) && playerData.id === gameData?.playersInSession[gameData.currentPlayer] &&
-              <InJail canBuyOut={canBuyOut} jailFreeCards={playerData.jailFreeCards ?? 0} />}
-          </>
-        )}
+    <>
+      {/* popup should live outside of parent so pointer-events:none doesn't block it */}
+      {gameData?.auction && <AuctionPopup sessionId={sessionId} />}
+
+      <div className="absolute inset-0 m-auto flex flex-col gap-5 items-center justify-center z-10 pointer-events-none select-none">
+        <div className="m-auto flex flex-col gap-5 items-center justify-center pointer-events-auto">
+          {gameData && !gameData.gameIsOn && playerData?.id === gameData.host ? (
+            <StartGame />
+          ) : (
+            <>
+              <div className="flex gap-5">
+                <Dice numberOfSides={gameData?.diceOne} />
+                <Dice numberOfSides={gameData?.diceTwo} />
+              </div>
+              {playerData && playerData.status === "PLAYING" && <ThrowDice />}
+              {playerData && playerData.status === "BUYING" && <BuyProperty cost={cost} canBuy={canBuy} />}
+              {playerData && playerData.status === "FINISHING" && <EndTurn />}
+              {playerData && jailStatuses.includes(playerData.status) && playerData.id === gameData?.playersInSession[gameData.currentPlayer] &&
+                <InJail canBuyOut={canBuyOut} jailFreeCards={playerData.jailFreeCards ?? 0} />}
+            </>
+          )}
+        </div>
       </div>
-    </div>
+    </>
   );
 }
 
@@ -129,6 +140,12 @@ function BuyProperty({ cost, canBuy }: { cost: number; canBuy: boolean }) {
       >
         Don't buy
       </button>
+      <button
+        className="p-2 text-black bg-white rounded-md shadow-md hover:bg-gray-200 hover:cursor-pointer"
+        onClick={() => auction(sessionId)}
+      >
+        Auction
+      </button>
     </div>
   );
 }
@@ -162,6 +179,54 @@ function InJail({ canBuyOut, jailFreeCards }: { canBuyOut: boolean; jailFreeCard
           Use Jail Free Card ({jailFreeCards})
         </button>
       )}
+    </div>
+  );
+}
+
+// small popup component shown during auction
+function AuctionPopup({ sessionId }: { sessionId: string }) {
+  const gameData = useGameData((s) => s.data);
+  const playerId = useGameData((s) => s.ownPlayerId);
+  const playerData = useGameData((s) => s.players?.[playerId] ?? null);
+  const allPlayers = useGameData((s) => s.players);
+  const [bidAmount, setBidAmount] = useState<number>(0);
+
+  if (!gameData?.auction) return null;
+
+  const { tile, currentBid, highestBidderId } = gameData.auction;
+  const highestBidderName = (() => {
+    if (!highestBidderId) return "";
+    if (highestBidderId === playerId) return "You";
+    return allPlayers?.[highestBidderId]?.name ?? "Unknown";
+  })();
+  const canBid = bidAmount > currentBid && (playerData?.money ?? 0) >= bidAmount;
+
+  return (
+    <div className="absolute inset-0 bg-black/50 flex items-center justify-center z-20 pointer-events-auto">
+      <div className="bg-white p-6 rounded-lg shadow-lg w-80 text-black">
+        <h3 className="mb-2 font-bold">Auction: {tile}</h3>
+        <p>Current bid: ${currentBid}</p>
+        {highestBidderId && <p>Leader: {highestBidderName}</p>}
+        <div className="mt-4 flex gap-2">
+          <input
+            type="number"
+            className="border p-1 rounded w-full"
+            value={bidAmount}
+            onChange={(e) => setBidAmount(Number(e.target.value))}
+            min={currentBid + 1}
+          />
+          <button
+            className={`p-2 rounded-md shadow-md text-black ${canBid ? "bg-blue-500 hover:bg-blue-600" : "bg-gray-300 cursor-not-allowed"}`}
+            disabled={!canBid}
+            onClick={() => {
+              bidAuction(sessionId, bidAmount);
+              setBidAmount((prev) => prev + 10);
+            }}
+          >
+            Bid
+          </button>
+        </div>
+      </div>
     </div>
   );
 }

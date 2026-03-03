@@ -1,10 +1,16 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useGameData } from "../_lib/data/gameData";
 import { Trade, Player } from "@/types/gameTypes";
 import { createTrade } from "../_lib/server/actions";
 import { useParams } from "next/navigation";
+import {
+    getMaxSharedIncome,
+    getPostTradeProperties,
+    toggleItemInList,
+    updateSharedIncomeList
+} from "./helperFunctionsTrade";
 
 interface Props {
     onClose: () => void;
@@ -55,45 +61,99 @@ export default function CreateTradePanel({ onClose }: Props) {
         onClose();
     };
 
+
     const toggleProperty = (property: string, side: "offer" | "receive") => {
         if (side === "offer") {
-            setOfferingProperties((prev) =>
-                prev.includes(property) ? prev.filter((p) => p !== property) : [...prev, property]
-            );
+            const isRemoving = offeringProperties.includes(property);
+            const newOfferingProperties = isRemoving
+                ? offeringProperties.filter((p) => p !== property)
+                : [...offeringProperties, property];
+
+            setOfferingProperties(newOfferingProperties);
+
+            // Resetting conflicting states:
+            if (!isRemoving) { // Adding to trade (Giving Away)
+                setOfferingFreeRent(prev => prev.filter(p => p !== property));
+                setOfferingSharedIncome(prev => prev.filter(p => p[0] !== property));
+            } else { // Removing from trade (Keeping)
+                setReceivingFreeRent(prev => prev.filter(p => p !== property));
+                setReceivingSharedIncome(prev => prev.filter(p => p[0] !== property));
+            }
+
         } else {
-            setReceivingProperties((prev) =>
-                prev.includes(property) ? prev.filter((p) => p !== property) : [...prev, property]
-            );
+            // Receive Side
+            const isRemoving = receivingProperties.includes(property);
+            const newReceivingProperties = isRemoving
+                ? receivingProperties.filter((p) => p !== property)
+                : [...receivingProperties, property];
+
+            setReceivingProperties(newReceivingProperties);
+
+            if (!isRemoving) { // Adding to trade (Taking)
+                setReceivingFreeRent(prev => prev.filter(p => p !== property));
+                setReceivingSharedIncome(prev => prev.filter(p => p[0] !== property));
+            } else { // Removing from trade (They keep it)
+                setOfferingFreeRent(prev => prev.filter(p => p !== property));
+                setOfferingSharedIncome(prev => prev.filter(p => p[0] !== property));
+            }
         }
     };
 
     const toggleFreeRent = (property: string, side: "offer" | "receive") => {
         if (side === "offer") {
-            setOfferingFreeRent((prev) =>
-                prev.includes(property) ? prev.filter((p) => p !== property) : [...prev, property]
-            );
+            setOfferingFreeRent(toggleItemInList(offeringFreeRent, property));
         } else {
-            setReceivingFreeRent((prev) =>
-                prev.includes(property) ? prev.filter((p) => p !== property) : [...prev, property]
-            );
+            setReceivingFreeRent(toggleItemInList(receivingFreeRent, property));
         }
     };
 
     const toggleSharedIncome = (property: string, side: "offer" | "receive") => {
+        const initialValue: [string, number] = [property, 50];
+
         if (side === "offer") {
-            setOfferingSharedIncome((prev) =>
-                prev.some(item => item[0] === property)
-                    ? prev.filter((p) => p[0] !== property)
-                    : [...prev, [property, 50]]
-            );
+            setOfferingSharedIncome((prev) => {
+                const exists = prev.some(i => i[0] === property);
+                return exists ? prev.filter(i => i[0] !== property) : [...prev, initialValue];
+            });
         } else {
-            setReceivingSharedIncome((prev) =>
-                prev.some(item => item[0] === property)
-                    ? prev.filter((p) => p[0] !== property)
-                    : [...prev, [property, 50]]
-            );
+            setReceivingSharedIncome((prev) => {
+                const exists = prev.some(i => i[0] === property);
+                return exists ? prev.filter(i => i[0] !== property) : [...prev, initialValue];
+            });
         }
     };
+
+    const updateSharedIncomeValue = (property: string, value: number, side: "offer" | "receive") => {
+        const max = getMaxSharedIncome(
+            property,
+            side === "offer" ? ownPlayerId : receivingPlayerId,
+            ownPlayerId,
+            receivingPlayerId,
+            ownables,
+            offeringProperties,
+            receivingProperties
+        );
+        const clamped = Math.min(max, Math.max(0, value));
+
+        if (side === "offer") {
+            setOfferingSharedIncome(prev => updateSharedIncomeList(prev, property, clamped));
+        } else {
+            setReceivingSharedIncome(prev => updateSharedIncomeList(prev, property, clamped));
+        }
+    }
+
+
+    // Computed Lists
+    const myPostTradeProperties = useMemo(() =>
+        getPostTradeProperties(ownPlayer.ownables, offeringProperties, receivingProperties),
+        [ownPlayer.ownables, offeringProperties, receivingProperties]
+    );
+
+    const theirPostTradeProperties = useMemo(() =>
+        getPostTradeProperties(receivingPlayer?.ownables, receivingProperties, offeringProperties),
+        [receivingPlayer, receivingProperties, offeringProperties]
+    );
+
 
     return (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[100] p-4">
@@ -110,17 +170,19 @@ export default function CreateTradePanel({ onClose }: Props) {
 
                 {/* Opponent Selection */}
                 <div className="p-4 border-b bg-gray-50">
-                    <label className="block text-sm font-bold text-gray-700 mb-2">SELECT OPPONENT</label>
+
                     <select
                         value={receivingPlayerId}
                         onChange={(e) => {
                             setReceivingPlayerId(e.target.value);
                             setReceivingProperties([]);
                             setReceivingMoney(0);
+                            setReceivingFreeRent([]);
+                            setReceivingSharedIncome([]);
                         }}
                         className="w-full p-2 border-2 border-blue-200 rounded-lg focus:outline-none focus:border-blue-500 text-black transition-colors"
                     >
-                        <option value="">Choose a player...</option>
+                        <option value="">Select opponent for trade...</option>
                         {opponents.map((p) => (
                             <option key={p.id} value={p.id}>{p.name}</option>
                         ))}
@@ -182,7 +244,7 @@ export default function CreateTradePanel({ onClose }: Props) {
                             </button>
                             {offerSections.rent && (
                                 <div className="grid grid-cols-1 gap-1 max-h-48 overflow-y-auto pr-1">
-                                    {ownPlayer.ownables?.map((propName) => (
+                                    {myPostTradeProperties.map((propName) => (
                                         <PropertyItem
                                             key={propName}
                                             name={propName}
@@ -191,8 +253,8 @@ export default function CreateTradePanel({ onClose }: Props) {
                                             color={ownables?.[propName]?.mortgaged ? "gray" : "green"}
                                         />
                                     ))}
-                                    {(!ownPlayer.ownables || ownPlayer.ownables.length === 0) && (
-                                        <div className="text-[10px] text-gray-400 italic">No properties owned</div>
+                                    {myPostTradeProperties.length === 0 && (
+                                        <div className="text-[10px] text-gray-400 italic">No available properties</div>
                                     )}
                                 </div>
                             )}
@@ -208,17 +270,22 @@ export default function CreateTradePanel({ onClose }: Props) {
                             </button>
                             {offerSections.income && (
                                 <div className="grid grid-cols-1 gap-1 max-h-48 overflow-y-auto pr-1">
-                                    {ownPlayer.ownables?.map((propName) => (
-                                        <PropertyItem
-                                            key={propName}
-                                            name={propName}
-                                            selected={offeringSharedIncome.some((item) => item[0] === propName)}
-                                            onClick={() => toggleSharedIncome(propName, "offer")}
-                                            color={ownables?.[propName]?.mortgaged ? "gray" : "green"}
-                                        />
-                                    ))}
-                                    {(!ownPlayer.ownables || ownPlayer.ownables.length === 0) && (
-                                        <div className="text-[10px] text-gray-400 italic">No properties owned</div>
+                                    {myPostTradeProperties.map((propName) => {
+                                        const incomeItem = offeringSharedIncome.find(i => i[0] === propName);
+                                        return (
+                                            <SharedIncomeItem
+                                                key={propName}
+                                                name={propName}
+                                                selected={!!incomeItem}
+                                                percentage={incomeItem?.[1]}
+                                                onToggle={() => toggleSharedIncome(propName, "offer")}
+                                                onChangePercent={(val) => updateSharedIncomeValue(propName, val, "offer")}
+                                                color={ownables?.[propName]?.mortgaged ? "gray" : "green"}
+                                            />
+                                        );
+                                    })}
+                                    {myPostTradeProperties.length === 0 && (
+                                        <div className="text-[10px] text-gray-400 italic">No available properties</div>
                                     )}
                                 </div>
                             )}
@@ -235,7 +302,7 @@ export default function CreateTradePanel({ onClose }: Props) {
                     </div>
 
                     {/* Their Request */}
-                    <div className={`flex-1 ${receivingPlayer ? 'bg-orange-50 border-orange-200' : 'bg-gray-100 border-gray-200 grayscale'} rounded-lg border-2 p-4 flex flex-col transition-all overflow-hidden`}>
+                    <div className={`flex-1 ${receivingPlayer ? 'bg-orange-50 border-orange-200' : 'bg-gray-100 border-gray-200 grayscale'} rounded-lg border-2 p-4 flex flex-col transition-all`}>
                         <h3 className={`font-bold ${receivingPlayer ? 'text-orange-800 border-orange-200' : 'text-gray-500 border-gray-200'} border-b pb-2 mb-4 uppercase`}>
                             {receivingPlayer ? `${receivingPlayer.name}'S ITEMS` : 'THEIR ITEMS'}
                         </h3>
@@ -291,7 +358,7 @@ export default function CreateTradePanel({ onClose }: Props) {
                                     </button>
                                     {receiveSections.rent && (
                                         <div className="grid grid-cols-1 gap-1 max-h-48 overflow-y-auto pr-1">
-                                            {receivingPlayer.ownables?.map((propName) => (
+                                            {theirPostTradeProperties.map((propName) => (
                                                 <PropertyItem
                                                     key={propName}
                                                     name={propName}
@@ -300,8 +367,8 @@ export default function CreateTradePanel({ onClose }: Props) {
                                                     color={ownables?.[propName]?.mortgaged ? "gray" : "orange"}
                                                 />
                                             ))}
-                                            {(!receivingPlayer.ownables || receivingPlayer.ownables.length === 0) && (
-                                                <div className="text-[10px] text-gray-400 italic">No properties owned</div>
+                                            {theirPostTradeProperties.length === 0 && (
+                                                <div className="text-[10px] text-gray-400 italic">No available properties</div>
                                             )}
                                         </div>
                                     )}
@@ -317,17 +384,22 @@ export default function CreateTradePanel({ onClose }: Props) {
                                     </button>
                                     {receiveSections.income && (
                                         <div className="grid grid-cols-1 gap-1 max-h-48 overflow-y-auto pr-1">
-                                            {receivingPlayer.ownables?.map((propName) => (
-                                                <PropertyItem
-                                                    key={propName}
-                                                    name={propName}
-                                                    selected={receivingSharedIncome.some((item) => item[0] === propName)}
-                                                    onClick={() => toggleSharedIncome(propName, "receive")}
-                                                    color={ownables?.[propName]?.mortgaged ? "gray" : "orange"}
-                                                />
-                                            ))}
-                                            {(!receivingPlayer.ownables || receivingPlayer.ownables.length === 0) && (
-                                                <div className="text-[10px] text-gray-400 italic">No properties owned</div>
+                                            {theirPostTradeProperties.map((propName) => {
+                                                const incomeItem = receivingSharedIncome.find(i => i[0] === propName);
+                                                return (
+                                                    <SharedIncomeItem
+                                                        key={propName}
+                                                        name={propName}
+                                                        selected={!!incomeItem}
+                                                        percentage={incomeItem?.[1]}
+                                                        onToggle={() => toggleSharedIncome(propName, "receive")}
+                                                        onChangePercent={(val) => updateSharedIncomeValue(propName, val, "receive")}
+                                                        color={ownables?.[propName]?.mortgaged ? "gray" : "orange"}
+                                                    />
+                                                );
+                                            })}
+                                            {theirPostTradeProperties.length === 0 && (
+                                                <div className="text-[10px] text-gray-400 italic">No available properties</div>
                                             )}
                                         </div>
                                     )}
@@ -401,5 +473,42 @@ function PropertyItem({ name, selected, onClick, color }: { name: string; select
                 </svg>
             )}
         </button>
+    );
+}
+
+function SharedIncomeItem({ name, selected, percentage, onToggle, onChangePercent, color }: {
+    name: string;
+    selected: boolean;
+    percentage?: number;
+    onToggle: () => void;
+    onChangePercent: (val: number) => void;
+    color: "green" | "orange" | "gray"
+}) {
+    const bgColor = selected
+        ? (color === "green" ? "bg-green-600 text-white" : color === "orange" ? "bg-orange-600 text-white" : "bg-gray-600 text-white")
+        : "bg-white text-black hover:bg-gray-50 border-gray-200";
+
+    return (
+        <div className={`p-2 rounded border-2 text-left text-xs font-bold transition-all flex items-center justify-between ${bgColor}`}>
+            <button onClick={onToggle} className="flex-1 text-left truncate flex items-center gap-2">
+                <span>{name}</span>
+            </button>
+            {selected && (
+                <div className="flex items-center gap-1 ml-2" onClick={(e) => e.stopPropagation()}>
+                    <input
+                        type="number"
+                        min="1"
+                        max="100"
+                        value={percentage}
+                        onChange={(e) => onChangePercent(parseInt(e.target.value) || 0)}
+                        className="w-12 p-1 text-black rounded text-right"
+                    />
+                    <span>%</span>
+                </div>
+            )}
+            {!selected && (
+                <button onClick={onToggle} className="ml-2 opacity-50 text-[10px]">Select</button>
+            )}
+        </div>
     );
 }

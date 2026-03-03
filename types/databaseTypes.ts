@@ -1,3 +1,10 @@
+export type AuctionInfoRTDB = {
+  tile: string;
+  currentBid: number;
+  highestBidderId: string;
+  participants: string[];
+};
+
 export type GameDataRTDB = {
   diceOne: number;
   diceTwo: number;
@@ -22,4 +29,6 @@ export type GameDataRTDB = {
     offeringSharedIncome: [string, number][];
     receivingSharedIncome: [string, number][];
   }>;
+
+  auction?: AuctionInfoRTDB;
 };
