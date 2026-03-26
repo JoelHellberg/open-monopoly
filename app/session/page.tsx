@@ -1,3 +1,4 @@
+"use client"
 import { useState } from "react";
 import ActionsDisplay from "./board/actionsDisplay";
 import GameBoard from "./board/gameboard";
