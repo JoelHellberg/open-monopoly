@@ -129,7 +129,7 @@ export default function CreateTradePanel({ onClose }: Props) {
             side === "offer" ? ownPlayerId : receivingPlayerId,
             ownPlayerId,
             receivingPlayerId,
-            ownables,
+            ownables ?? {},
             offeringProperties,
             receivingProperties
         );
