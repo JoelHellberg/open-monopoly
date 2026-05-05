@@ -1,7 +1,9 @@
 "use server";
 import { getRTDBAdmin } from "@/app/_lib/firebaseAdmin";
 import { PropertyTile, RailroadTile, Tile, UtilityTile } from "@/types/board";
-import { GameData, Ownable, Player } from "@/types/gameTypes";
+import { GameData, GameSettings, Ownable, Player } from "@/types/gameTypes";
+import { getDefaultGameSettings } from "../gameSettingsConstants";
+import { fetchGameData } from "./database";
 
 function generateRandomId(length: number): string {
   const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
@@ -10,11 +12,19 @@ function generateRandomId(length: number): string {
   ).join("");
 }
 
-export async function addGameDataToDB(gameData: GameData): Promise<string> {
+export async function addGameDataToDB(
+  gameData: GameData,
+  settings?: GameSettings
+): Promise<string> {
   const rtdb = await getRTDBAdmin();
   const gameId = generateRandomId(6);
 
-  await rtdb.ref(`games/${gameId}`).set(gameData);
+  const gameDataWithSettings: GameData = {
+    ...gameData,
+    settings: settings || getDefaultGameSettings(),
+  };
+
+  await rtdb.ref(`games/${gameId}`).set(gameDataWithSettings);
 
   return gameId;
 }
@@ -26,14 +36,17 @@ export async function checkGameExists(sessionId: string): Promise<boolean> {
 }
 
 export async function addPlayerToGame(userId: string, sessionId: string, color: string, name: string) {
-  const rtdb = await getRTDBAdmin();
-  // Check if game has started
-  const gameRef = rtdb.ref(`games/${sessionId}`);
-  const gameSnapshot = await gameRef.get();
-  const gameData = gameSnapshot.val();
+  // Use fetchGameData to get properly normalized data with settings
+  const gameData = await fetchGameData(sessionId);
+  
   if (gameData.gameIsOn) {
     throw new Error("Game has already started.");
   }
+
+  // Get starting money from settings with fallback to default
+  const startingMoney = gameData.settings?.startingMoney ?? getDefaultGameSettings().startingMoney;
+
+  const rtdb = await getRTDBAdmin();
   // Check if player already exists
   const playerRef = rtdb.ref(`games/${sessionId}/players/${userId}`);
   const playerSnapshot = await playerRef.get();
@@ -42,7 +55,7 @@ export async function addPlayerToGame(userId: string, sessionId: string, color: 
     const playerData: Player = {
       id: userId,
       name: name,
-      money: 1000,
+      money: startingMoney,
       ownables: [],
       pos: 0,
       status: "",
@@ -53,10 +66,10 @@ export async function addPlayerToGame(userId: string, sessionId: string, color: 
 
     await playerRef.set(playerData);
   } else {
-    // Update color and name if player exists!
+    // Update color and name if player exists
     await playerRef.update({
       color: color,
-      name: name
+      name: name,
     });
   }
 

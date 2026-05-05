@@ -13,12 +13,14 @@ import {
   goToJail,
   goToNextCardSpace,
   useJailFreeCard,
-  bidAuction,
+  submitBlindBid,
+  finalizeAuction,
+  dismissAuction,
 } from "../_lib/server/actions";
 import { useParams } from "next/navigation";
-import defaultBoard from "@/data/boards/default";
+import { defaultBoard, allownableBoard } from "@/data/boards/default";
 import type { PropertyTile, RailroadTile, UtilityTile, Tile } from "@/types/board";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 export default function ActionsDisplay() {
   const params = useParams();
@@ -183,49 +185,128 @@ function InJail({ canBuyOut, jailFreeCards }: { canBuyOut: boolean; jailFreeCard
   );
 }
 
-// small popup component shown during auction
+// small popup component shown during auction - blind bidding system
 function AuctionPopup({ sessionId }: { sessionId: string }) {
   const gameData = useGameData((s) => s.data);
   const playerId = useGameData((s) => s.ownPlayerId);
   const playerData = useGameData((s) => s.players?.[playerId] ?? null);
   const allPlayers = useGameData((s) => s.players);
   const [bidAmount, setBidAmount] = useState<number>(0);
+  const [hasSubmitted, setHasSubmitted] = useState<boolean>(false);
 
   if (!gameData?.auction) return null;
 
-  const { tile, currentBid, highestBidderId } = gameData.auction;
-  const highestBidderName = (() => {
-    if (!highestBidderId) return "";
-    if (highestBidderId === playerId) return "You";
-    return allPlayers?.[highestBidderId]?.name ?? "Unknown";
-  })();
-  const canBid = bidAmount > currentBid && (playerData?.money ?? 0) >= bidAmount;
+  const { tile, phase, blindBids, bidSubmitted, participants } = gameData.auction;
+  const isBiddingPhase = phase === "bidding";
+  const myBid = blindBids?.[playerId];
+  const hasBid = bidSubmitted?.includes(playerId);
+
+  // Get all bids for reveal phase
+  const allBids = participants?.map(pid => ({
+    playerId: pid,
+    name: allPlayers?.[pid]?.name ?? "Unknown",
+    bid: blindBids?.[pid] || 0
+  })).sort((a, b) => b.bid - a.bid) || [];
+
+  const highestBid = allBids[0]?.bid || 0;
+  const winner = allBids[0]?.playerId === playerId ? "You" : allBids[0]?.name;
+  const didWin = allBids[0]?.playerId === playerId;
+
+  // Reset hasSubmitted when auction starts new
+  useEffect(() => {
+    if (phase === "bidding") {
+      setHasSubmitted(false);
+      setBidAmount(0);
+    }
+  }, [phase]);
+
+  const handleSubmitBid = () => {
+    if (bidAmount > 0 && (playerData?.money ?? 0) >= bidAmount) {
+      submitBlindBid(sessionId, bidAmount);
+      setHasSubmitted(true);
+    }
+  };
 
   return (
     <div className="absolute inset-0 bg-black/50 flex items-center justify-center z-20 pointer-events-auto">
       <div className="bg-white p-6 rounded-lg shadow-lg w-80 text-black">
         <h3 className="mb-2 font-bold">Auction: {tile}</h3>
-        <p>Current bid: ${currentBid}</p>
-        {highestBidderId && <p>Leader: {highestBidderName}</p>}
-        <div className="mt-4 flex gap-2">
-          <input
-            type="number"
-            className="border p-1 rounded w-full"
-            value={bidAmount}
-            onChange={(e) => setBidAmount(Number(e.target.value))}
-            min={currentBid + 1}
-          />
-          <button
-            className={`p-2 rounded-md shadow-md text-black ${canBid ? "bg-blue-500 hover:bg-blue-600" : "bg-gray-300 cursor-not-allowed"}`}
-            disabled={!canBid}
-            onClick={() => {
-              bidAuction(sessionId, bidAmount);
-              setBidAmount((prev) => prev + 10);
-            }}
-          >
-            Bid
-          </button>
-        </div>
+        
+        {isBiddingPhase ? (
+          // Bidding phase - blind bid input
+          <>
+            <p className="mb-2 text-sm text-gray-600">
+              Submit your bid.
+            </p>
+            <p className="mb-2 text-sm">
+              Your money: ${playerData?.money ?? 0}
+            </p>
+            
+            {hasBid ? (
+              <div className="mt-4 p-3 bg-green-100 rounded text-center">
+                <p className="font-bold">Bid Submitted!</p>
+                <p>Your bid: ${myBid}</p>
+                <p className="text-sm text-gray-600">Waiting for others...</p>
+              </div>
+            ) : (
+              <div className="mt-4 flex gap-2">
+                <input
+                  type="number"
+                  className="border p-1 rounded w-full"
+                  value={bidAmount}
+                  onChange={(e) => setBidAmount(Number(e.target.value))}
+                  min={1}
+                  placeholder="Enter your bid"
+                />
+                <button
+                  className={`p-2 rounded-md shadow-md text-white ${bidAmount > 0 && (playerData?.money ?? 0) >= bidAmount ? "bg-blue-500 hover:bg-blue-600" : "bg-gray-300 cursor-not-allowed"}`}
+                  disabled={bidAmount <= 0 || (playerData?.money ?? 0) < bidAmount}
+                  onClick={handleSubmitBid}
+                >
+                  Submit
+                </button>
+              </div>
+            )}
+            
+            <div className="mt-4 text-sm text-gray-600">
+              <p>Players who have bid: {bidSubmitted?.length || 0} / {participants?.length || 0}</p>
+            </div>
+          </>
+        ) : (
+          // Revealed phase - show all bids
+          <>
+            <p className="mb-2 font-bold">Results Revealed!</p>
+            
+            <div className="mt-4 space-y-2">
+              {allBids.map((bid, index) => (
+                <div 
+                  key={bid.playerId} 
+                  className={`p-2 rounded ${index === 0 ? "bg-green-100 font-bold" : "bg-gray-100"}`}
+                >
+                  {index + 1}. {bid.name}: ${bid.bid}
+                </div>
+              ))}
+            </div>
+            
+            {highestBid > 0 ? (
+              <div className="mt-4 p-3 bg-blue-100 rounded text-center">
+                <p className="font-bold">{didWin ? "🎉 You Won!" : `Winner: ${winner}`}</p>
+                <p>Winning bid: ${highestBid}</p>
+              </div>
+            ) : (
+              <div className="mt-4 p-3 bg-gray-100 rounded text-center">
+                <p>No one bid on this property.</p>
+              </div>
+            )}
+            
+            <button
+              className="mt-4 p-2 w-full bg-blue-500 text-white rounded-md shadow-md hover:bg-blue-600 hover:cursor-pointer"
+              onClick={() => dismissAuction(sessionId)}
+            >
+              Continue
+            </button>
+          </>
+        )}
       </div>
     </div>
   );

@@ -109,7 +109,6 @@ async function handleEvent(sessionId: string, tilePos: number) {
       // no money storage implemented yet
       break;
     case "toJail":
-      //break; // remove this later, no way to get out of jail now
       const jailIndex = defaultBoard.findIndex(
         (tile) => tile.subtype === "jail"
       );
@@ -129,6 +128,35 @@ async function handleEvent(sessionId: string, tilePos: number) {
     case "chest":
       const chestResult = await handleCard(sessionId, playerId, "chest");
       if (chestResult !== "CONTINUE") return;
+      break;
+    case "auctionHouse":
+      // create auction event
+      break;
+    case "tradeMarket":
+      // create trade market event
+      break;
+    case "lottery":
+      // create lottery event
+      const gameData = await fetchGameData(sessionId);
+      const diceOne = Math.floor(Math.random() * 6) + 1;
+      switch (diceOne)  {
+        case 1 | 2:{
+          // Put one of the player's properties up for auction
+          // playerData.ownables
+          break;
+        }
+        case 3 | 4:{
+          // Buy property from bank
+          
+          break;
+        }
+        case 5 | 6:{
+          // Buy property from another player for half price
+          const otherPlayers = gameData.playersInSession.filter(pid => pid !== playerId);
+          if (otherPlayers.length === 0) break; // No other players to buy from
+          break;
+        }
+      }
       break;
   }
 

@@ -1,5 +1,5 @@
 import { Tile } from "@/types/board";
-import { GameData } from "@/types/gameTypes";
+import { GameData, GameSettings } from "@/types/gameTypes";
 import {
   addCompanyToGame,
   addGameDataToDB,
@@ -7,9 +7,15 @@ import {
   addPropertyToGame,
   addTransportToGame,
 } from "../server/setup";
+import { getDefaultGameSettings } from "../gameSettingsConstants";
 import { createGameSession, verifySession } from "@/app/_lib/session";
 
-export async function hostGame(board: Tile[], color: string, name: string) {
+export async function hostGame(
+  board: Tile[],
+  color: string,
+  name: string,
+  settings?: Partial<GameSettings>
+) {
   const { userId: playerId } = await verifySession();
   const hostPlayerId = playerId as string;
 
@@ -22,7 +28,12 @@ export async function hostGame(board: Tile[], color: string, name: string) {
     gameIsOn: false,
   };
 
-  const sessionId = await addGameDataToDB(gameData);
+  const finalSettings: GameSettings = {
+    ...getDefaultGameSettings(),
+    ...settings,
+  };
+
+  const sessionId = await addGameDataToDB(gameData, finalSettings);
   await addPlayerToGame(hostPlayerId, sessionId, color, name);
 
   for (const street of board) {

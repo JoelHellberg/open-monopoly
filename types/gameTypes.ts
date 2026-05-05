@@ -1,10 +1,19 @@
 import { Timestamp } from "firebase/firestore";
 
+export type GameSettings = {
+  startingMoney: number;
+  selectedBoard: "default";
+  freeParkingMoney: boolean;
+  allowHouseShortage: boolean;
+};
+
 export type AuctionInfo = {
   tile: string;                       // ownable id
-  currentBid: number;
-  highestBidderId: string;             // player id
-  participants: string[];            // all players taking part
+  participants: string[];            // all players taking part in the auction
+  // Blind bidding fields
+  phase: "bidding" | "revealed";      // current phase
+  blindBids: Record<string, number>;  // playerId -> bid amount (only revealed in reveal phase)
+  bidSubmitted: string[];             // players who have submitted their blind bid
 };
 
 export type GameData = {
@@ -14,6 +23,7 @@ export type GameData = {
   currentPlayer: number;
   playersInSession: string[];
   gameIsOn: boolean;
+  settings?: GameSettings;
   gameChatMessages?: Record<string, {
     messageContent: string;
     playerId: string;

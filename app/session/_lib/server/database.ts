@@ -21,12 +21,13 @@ export async function fetchGameData(sessionId: string): Promise<GameData> {
 export async function updateGameData(sessionId: string, gameData: GameData) {
   const rtdb = await getRTDBAdmin();
 
-  const { playersInSession, ...rest } = gameData;
+  const { playersInSession, settings, ...rest } = gameData;
 
   const rtdbData: GameDataRTDB = {
     ...rest,
+    settings: settings,
     playersInSession: arrayToRTDBMap(playersInSession),
-  };
+  } as GameDataRTDB;
 
   await rtdb.ref(`games/${sessionId}`).update(rtdbData);
 }

@@ -2,7 +2,13 @@ export type AuctionInfoRTDB = {
   tile: string;
   currentBid: number;
   highestBidderId: string;
-  participants: string[];
+  participants: string[];  endTime: number;};
+
+export type GameSettingsRTDB = {
+  startingMoney: number;
+  selectedBoard: "default";
+  freeParkingMoney: boolean;
+  allowHouseShortage: boolean;
 };
 
 export type GameDataRTDB = {
@@ -12,6 +18,7 @@ export type GameDataRTDB = {
   currentPlayer: number;
   playersInSession?: Record<string, true>;
   gameIsOn: boolean;
+  settings?: GameSettingsRTDB;
   gameChatMessages?: Record<string, {
     messageContent: string;
     playerId: string;

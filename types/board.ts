@@ -49,7 +49,7 @@ export interface EventTile extends BaseTile {
 }
 
 export interface CornerTile extends EventTile {
-  subtype: "go" | "jail" | "parking" | "toJail";
+  subtype: "go" | "jail" | "parking" | "toJail" | "auctionHouse" | "tradeMarket" | "lottery";
 }
 
 export interface TaxTile extends EventTile {

@@ -196,12 +196,13 @@ export async function auction(sessionId: string) {
   const ownableId = tile.name;
   const ownableData: Ownable = await fetchOwnableData(ownableId, sessionId);
 
-  // prepare auction state in game data
+  // prepare auction state in game data - start blind bidding phase
   gameData.auction = {
     tile: ownableId,
-    currentBid: ownableData.price / 2, // start at half price
-    highestBidderId: "",
     participants: [...gameData.playersInSession],
+    phase: "bidding",
+    blindBids: {},
+    bidSubmitted: [],
   };
 
   // update global game data with auction info
@@ -213,7 +214,7 @@ export async function auction(sessionId: string) {
   }
 }
 
-export async function bidAuction(sessionId: string, amount: number) {
+export async function submitBlindBid(sessionId: string, amount: number) {
   const playerId: string = await getPlayerId();
   const gameData: GameData = await fetchGameData(sessionId);
 
@@ -221,9 +222,24 @@ export async function bidAuction(sessionId: string, amount: number) {
     throw new Error("No auction in progress");
   }
 
-  // must beat current bid
-  if (amount <= gameData.auction.currentBid) {
-    throw new Error("Bid must be higher than current bid");
+  // Ensure auction data has required properties (Firebase may not store empty arrays/objects)
+  if (!gameData.auction.bidSubmitted) {
+    gameData.auction.bidSubmitted = [];
+  }
+  if (!gameData.auction.blindBids) {
+    gameData.auction.blindBids = {};
+  }
+  if (!gameData.auction.phase) {
+    gameData.auction.phase = "bidding";
+  }
+
+  if (gameData.auction.phase !== "bidding") {
+    throw new Error("Bidding phase has ended");
+  }
+
+  // Check if player has already submitted
+  if (gameData.auction.bidSubmitted.includes(playerId)) {
+    throw new Error("You have already submitted a bid");
   }
 
   // ensure bidder has enough money
@@ -232,12 +248,68 @@ export async function bidAuction(sessionId: string, amount: number) {
     throw new Error("Not enough money to place bid");
   }
 
-  gameData.auction.currentBid = amount;
-  gameData.auction.highestBidderId = playerId;
+  // Store the blind bid
+  gameData.auction.blindBids[playerId] = amount;
+  gameData.auction.bidSubmitted.push(playerId);
+
+  // Check if all players have submitted - if so, move to reveal phase immediately
+  if (gameData.auction.bidSubmitted.length === gameData.auction.participants.length) {
+    gameData.auction.phase = "revealed";
+    await updateGameData(sessionId, gameData);
+    // End the auction immediately since everyone has bid
+    await finalizeAuction(sessionId);
+    return;
+  }
 
   await updateGameData(sessionId, gameData);
 }
 
+
+export async function finalizeAuction(sessionId: string) {
+  const gameData: GameData = await fetchGameData(sessionId);
+  if (!gameData.auction) return;
+
+  // Only finish if all players have submitted their bids
+  if (gameData.auction.phase === "bidding" && 
+      gameData.auction.bidSubmitted.length < gameData.auction.participants.length) {
+    return;
+  }
+
+  const { tile, blindBids, participants } = gameData.auction;
+
+  // Determine the highest bidder from blind bids
+  let highestBidder: string = "";
+  let winningBid: number = 0;
+
+  for (const pid of participants) {
+    const bid = blindBids[pid] || 0;
+    if (bid > winningBid) {
+      winningBid = bid;
+      highestBidder = pid;
+    }
+  }
+
+  // clear auction state
+  delete gameData.auction;
+  await updateGameData(sessionId, gameData);
+
+  // transfer property if there was a winner
+  if (highestBidder && winningBid > 0) {
+    const ownableData: Ownable = await fetchOwnableData(tile, sessionId);
+    if (ownableData.owner === "") {
+      const winner: Player = await fetchPlayerData(highestBidder, sessionId);
+      winner.money -= winningBid;
+      winner.ownables = winner.ownables || [];
+      winner.ownables.push(tile);
+
+      ownableData.owner = highestBidder;
+      ownableData.incomePercent = { [highestBidder]: 100 };
+
+      await updatePlayerData(highestBidder, sessionId, winner);
+      await updateOwnableData(tile, sessionId, ownableData);
+    }
+  }
+}
 
 export async function sellProperty(sessionId: string, tileName: string) {
   if (!(await assertPlayerActionAllowed("SELL_PROPERTY", sessionId))) return;
@@ -334,6 +406,20 @@ export async function endTurn(sessionId: string) {
 export async function callUpdatePlayerStatus(sessionId: string) {
   const playerId: string = await getPlayerId();
   updatePlayerStatus(sessionId, playerId);
+}
+
+export async function dismissAuction(sessionId: string) {
+  const gameData: GameData = await fetchGameData(sessionId);
+  
+  if (!gameData.auction) return;
+
+  // Clear auction state
+  delete gameData.auction;
+  await updateGameData(sessionId, gameData);
+  
+  // Set current player to FINISHING status
+  const currentPlayerId = gameData.playersInSession[gameData.currentPlayer];
+  await setPlayersStatus(sessionId, currentPlayerId, "FINISHING");
 }
 
 export async function bankrupt(sessionId: string) {
