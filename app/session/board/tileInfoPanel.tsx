@@ -121,8 +121,11 @@ function UtilityInfo({ tile, ownableData, ownerData, board }: { tile: UtilityTil
       <div>
         <strong>Rent:</strong>
         <ul className="ml-3 mt-1 space-y-0.5">
-          <li className={activeIndex === 0 ? "font-bold text-green-600" : ""}>1 owned: {tile.multiplier[0]}× dice</li>
-          <li className={activeIndex === 1 ? "font-bold text-green-600" : ""}>2 owned: {tile.multiplier[1]}× dice</li>
+          {tile.multiplier.map((r, i) => (
+            <li key={i} className={i === activeIndex ? "font-bold text-green-600" : ""}>
+              {i + 1} owned: {r}× dice
+            </li>
+          ))}
         </ul>
       </div>
 

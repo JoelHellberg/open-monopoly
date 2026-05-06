@@ -118,7 +118,7 @@ export const allownableBoard: Tile[] = [
   { id: 2, name: "Mediterranean Avenue", type: "ownable", subtype: "property", color: "brown",
     price: 60, houseCost: 50, rent: [4, 20, 60, 120, 220, 320], },
 
-  { id: 3, name: "Mediterranean Avenue 2", type: "ownable", subtype: "property", color: "brown",
+  { id: 3, name: "Adriatic Avenue", type: "ownable", subtype: "property", color: "brown",
     price: 60, houseCost: 50, rent: [4, 20, 60, 120, 220, 320], },
 
   { id: 4, name: "Reading Railroad", type: "ownable", subtype: "transportation",
@@ -127,13 +127,13 @@ export const allownableBoard: Tile[] = [
   { id: 5, name: "Baltic Avenue", type: "ownable", subtype: "property", color: "brown",
     price: 80, houseCost: 50, rent: [5, 25, 75, 150, 270, 410], },
   
-  { id: 6, name: "Electric Company 1", type: "ownable", subtype: "company",
+  { id: 6, name: "Electric Company", type: "ownable", subtype: "company",
     price: 150, multiplier: [8, 16, 32, 64], },
 
   { id: 7, name: "Oriental Avenue", type: "ownable", subtype: "property", color: "light-blue",
     price: 100, houseCost: 50, rent: [6, 30, 90, 180, 320, 490], },
 
-  { id: 8, name: "Reading Railroad 2", type: "ownable", subtype: "transportation",
+  { id: 8, name: "Pacific Railroad", type: "ownable", subtype: "transportation",
     price: 200, rent: [20, 40, 80, 160, 320, 640, 1280, 2560], },
 
   { id: 9, name: "Vermont Avenue", type: "ownable", subtype: "property", color: "light-blue",
@@ -156,13 +156,13 @@ export const allownableBoard: Tile[] = [
   { id: 15, name: "Virginia Avenue", type: "ownable", subtype: "property", color: "pink",
     price: 160, houseCost: 100, rent: [11, 55, 165, 330, 600, 900], },
 
-  { id: 16, name: "Electric Company", type: "ownable", subtype: "company",
+  { id: 16, name: "Gas Company", type: "ownable", subtype: "company",
     price: 150, multiplier: [8, 16, 32, 64], },
 
   { id: 17, name: "St James Place", type: "ownable", subtype: "property", color: "orange",
     price: 180, houseCost: 100, rent: [12, 60, 180, 360, 650, 970], },
 
-  { id: 18, name: "Pennsylvania Railroad 2", type: "ownable", subtype: "transportation",
+  { id: 18, name: "Continental Railroad", type: "ownable", subtype: "transportation",
     price: 200, rent: [20, 40, 80, 160, 320, 640, 1280, 2560], },
 
   { id: 19, name: "Tennessee Avenue", type: "ownable", subtype: "property", color: "orange",
@@ -191,7 +191,7 @@ export const allownableBoard: Tile[] = [
   { id: 27, name: "Atlantic Avenue", type: "ownable", subtype: "property", color: "yellow",
     price: 260, houseCost: 150, rent: [19, 95, 285, 570, 1030, 1540], },
 
-  { id: 28, name: "B & O Railroad 2", type: "ownable", subtype: "transportation",
+  { id: 28, name: "Southern Railroad", type: "ownable", subtype: "transportation",
     price: 200, rent: [20, 40, 80, 160, 320, 640, 1280, 2560], },
 
   { id: 29, name: "Ventnor Avenue", type: "ownable", subtype: "property", color: "yellow",
@@ -214,16 +214,16 @@ export const allownableBoard: Tile[] = [
   { id: 35, name: "Pennsylvania Avenue", type: "ownable", subtype: "property", color: "green",
     price: 320, houseCost: 200, rent: [26, 130, 390, 780, 1400, 2110], },
 
-  { id: 36, name: "Water Works 2", type: "ownable", subtype: "company",
+  { id: 36, name: "Nuclear Power Plant", type: "ownable", subtype: "company",
     price: 150, multiplier: [8, 16, 32, 64], },
   
   { id: 37, name: "Park Place", type: "ownable", subtype: "property", color: "dark-blue",
     price: 350, houseCost: 200, rent: [27, 135, 410, 810, 1460, 2190], },
 
-  { id: 38, name: "Short Line 2", type: "ownable", subtype: "transportation",
+  { id: 38, name: "NY Central Railroad", type: "ownable", subtype: "transportation",
     price: 200, rent: [20, 40, 80, 160, 320, 640, 1280, 2560], },
 
-  { id: 39, name: "Park Place 2", type: "ownable", subtype: "property", color: "dark-blue",
+  { id: 39, name: "Grand Boulevard", type: "ownable", subtype: "property", color: "dark-blue",
     price: 350, houseCost: 200, rent: [27, 135, 410, 810, 1460, 2190], },
 
   { id: 40, name: "Boardwalk", type: "ownable", subtype: "property", color: "dark-blue",
