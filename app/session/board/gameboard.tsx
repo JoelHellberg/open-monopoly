@@ -1,16 +1,19 @@
 "use client";
-import defaultBoard from "@/data/boards/default";
+import { getBoard } from "@/data/boards";
 import type { Tile as BoardTile } from "@/types/board";
 import { propertyColors } from "@/data/colors";
 import React from "react";
 import PlayersDisplay from "./players/playersDisplay";
 import { useGameData } from "../_lib/data/gameData";
+import { getDefaultGameSettings } from "../_lib/gameSettingsConstants";
 import type { PropertyTile, RailroadTile, UtilityTile, } from "@/types/board";
 
 type OwnableTile = PropertyTile | RailroadTile | UtilityTile;
 
 export default function GameBoard({ onSelectTile }: { onSelectTile: (tile: OwnableTile) => void }) {
-  const board = defaultBoard;
+  const gameData = useGameData((state) => state.data);
+  const settings = gameData?.settings || getDefaultGameSettings();
+  const board = getBoard(settings.selectedBoard);
 
   const sPS = board.length / 4 + 1; // Streets Per Side
   const sBC = sPS - 2; // Streets Between Corners

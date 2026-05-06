@@ -1,6 +1,7 @@
 "use server";
 
-import defaultBoard from "@/data/boards/default";
+import { getBoard } from "@/data/boards";
+import { getDefaultGameSettings } from "../gameSettingsConstants";
 import {
   assertPlayerActionAllowed,
   calculateRent,
@@ -38,7 +39,11 @@ export async function startPlayersTurn(sessionId: string, playerId: string) {
 }
 
 export async function processLanding(sessionId: string, tilePos: number) {
-  switch (defaultBoard[tilePos].type) {
+  const gameData: GameData = await fetchGameData(sessionId);
+  const settings = gameData.settings || getDefaultGameSettings();
+  const board = getBoard(settings.selectedBoard);
+
+  switch (board[tilePos].type) {
     case "event":
       await handleEvent(sessionId, tilePos);
       return;
@@ -54,14 +59,15 @@ export async function processLanding(sessionId: string, tilePos: number) {
 async function handleLandingOnProperty(sessionId: string) {
   const playerId: string = await getPlayerId();
   const playerData: Player = await fetchPlayerData(playerId, sessionId);
+  const gameData: GameData = await fetchGameData(sessionId);
+  const settings = gameData.settings || getDefaultGameSettings();
+  const board = getBoard(settings.selectedBoard);
 
-  const board = defaultBoard;
   const ownableData: Ownable = await fetchOwnableData(
     board[playerData.pos].name,
     sessionId
   );
   // Calculate if doubles
-  const gameData: GameData = await fetchGameData(sessionId);
   const rolledDoubles = gameData.diceOne == gameData.diceTwo;
 
   // If player owns the property
@@ -73,7 +79,7 @@ async function handleLandingOnProperty(sessionId: string) {
   // Fetch owner
   const ownerId = ownableData.owner;
   const ownerData: Player = await fetchPlayerData(ownerId, sessionId);
-  const totalRent = await calculateRent(ownableData, ownerData, playerId, gameData.diceOne + gameData.diceTwo);
+  const totalRent = await calculateRent(ownableData, ownerData, playerId, gameData.diceOne + gameData.diceTwo, board);
   playerData.money -= totalRent;
   // Temporary until debted works
   // Calculate rent for all players with incomePercent
@@ -96,8 +102,11 @@ async function handleLandingOnProperty(sessionId: string) {
 async function handleEvent(sessionId: string, tilePos: number) {
   const playerId: string = await getPlayerId();
   const playerData: Player = await fetchPlayerData(playerId, sessionId);
+  const gameData: GameData = await fetchGameData(sessionId);
+  const settings = gameData.settings || getDefaultGameSettings();
+  const board = getBoard(settings.selectedBoard);
 
-  switch (defaultBoard[tilePos].subtype) {
+  switch (board[tilePos].subtype) {
     case "go":
       playerData.money += 300;
       await updatePlayerData(playerId, sessionId, playerData);
@@ -109,7 +118,7 @@ async function handleEvent(sessionId: string, tilePos: number) {
       // no money storage implemented yet
       break;
     case "toJail":
-      const jailIndex = defaultBoard.findIndex(
+      const jailIndex = board.findIndex(
         (tile) => tile.subtype === "jail"
       );
       playerData.pos = jailIndex;
@@ -118,7 +127,7 @@ async function handleEvent(sessionId: string, tilePos: number) {
       await endPlayersTurn(sessionId, playerId);
       return;
     case "tax":
-      playerData.money -= defaultBoard[tilePos].amount;
+      playerData.money -= board[tilePos].amount;
       await updatePlayerData(playerId, sessionId, playerData);
       break;
     case "chance":
@@ -161,7 +170,6 @@ async function handleEvent(sessionId: string, tilePos: number) {
   }
 
   // Calculate if doubles
-  const gameData: GameData = await fetchGameData(sessionId);
   const rolledDoubles = gameData.diceOne == gameData.diceTwo;
   if (rolledDoubles) await setPlayersStatus(sessionId, playerId, "PLAYING");
   else await setPlayersStatus(sessionId, playerId, "FINISHING");
@@ -183,6 +191,10 @@ export async function endPlayersTurn(sessionId: string, playerId: string) {
 }
 
 async function handleCard(sessionId: string, playerId: string, type: "chance" | "chest"): Promise<string> {
+  const gameData: GameData = await fetchGameData(sessionId);
+  const settings = gameData.settings || getDefaultGameSettings();
+  const board = getBoard(settings.selectedBoard);
+
   const deck = type === "chance" ? chanceCards : communityChestCards;
   const card = deck[Math.floor(Math.random() * deck.length)];
 
@@ -232,7 +244,7 @@ async function handleCard(sessionId: string, playerId: string, type: "chance" | 
 
     case "MOVEREL":
       if (card.value) {
-        const boardLength = defaultBoard.length;
+        const boardLength = board.length;
         let newPos = (playerData.pos + card.value) % boardLength;
         if (newPos < 0) newPos += boardLength;
 
@@ -257,7 +269,7 @@ async function handleCard(sessionId: string, playerId: string, type: "chance" | 
       break;
 
     case "GO_TO_JAIL":
-      const jailIndex = defaultBoard.findIndex(
+      const jailIndex = board.findIndex(
         (tile) => tile.subtype === "jail"
       );
       playerData.pos = jailIndex;

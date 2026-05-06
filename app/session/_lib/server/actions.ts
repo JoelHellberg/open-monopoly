@@ -1,7 +1,8 @@
 "use server";
 
 import { getRTDBAdmin } from "@/app/_lib/firebaseAdmin";
-import defaultBoard from "@/data/boards/default";
+import { getBoard } from "@/data/boards";
+import { getDefaultGameSettings } from "../gameSettingsConstants";
 import { endPlayersTurn, processLanding, startPlayersTurn } from "./gameLogic";
 import { GameData, Ownable, Player, Trade } from "@/types/gameTypes";
 import {
@@ -115,13 +116,18 @@ async function walkTheBoard(sessionId: string, playerId: string, rtdb: any, play
   const playerData = playerSnapshot.val();
   const currentPos = playerData.pos ?? 0;
 
+  // Get game data to determine board
+  const gameData: GameData = await fetchGameData(sessionId);
+  const settings = gameData.settings || getDefaultGameSettings();
+  const board = getBoard(settings.selectedBoard);
+
   let newPlayerMoney = playerData.money;
   // Gain 200 if passed Go
-  if (currentPos + playerMovement >= defaultBoard.length) newPlayerMoney += 200;
+  if (currentPos + playerMovement >= board.length) newPlayerMoney += 200;
 
   // Calculate new player position
   let newPlayerPos =
-    (currentPos + playerMovement) % (defaultBoard.length);
+    (currentPos + playerMovement) % (board.length);
 
   // Calculate number of doubles in a row
   let newDoublesInRow = playerData.doublesInRow;
@@ -129,7 +135,7 @@ async function walkTheBoard(sessionId: string, playerId: string, rtdb: any, play
 
   // If 3rd double send to jail
   if (newDoublesInRow >= 3) {
-    const jailIndex = defaultBoard.findIndex(
+    const jailIndex = board.findIndex(
       (tile) => tile.subtype === "jail"
     );
     newPlayerPos = jailIndex;
@@ -159,7 +165,10 @@ export async function purchase(sessionId: string) {
 
   const playerId: string = await getPlayerId();
   const playerData: Player = await fetchPlayerData(playerId, sessionId);
-  const tile = defaultBoard[playerData.pos];
+  const gameData: GameData = await fetchGameData(sessionId);
+  const settings = gameData.settings || getDefaultGameSettings();
+  const board = getBoard(settings.selectedBoard);
+  const tile = board[playerData.pos];
 
   // Ensure ownables array exists
   if (!Array.isArray(playerData.ownables)) {
@@ -191,7 +200,9 @@ export async function auction(sessionId: string) {
   const playerId: string = await getPlayerId();
   const playerData: Player = await fetchPlayerData(playerId, sessionId);
   const gameData: GameData = await fetchGameData(sessionId);
-  const tile = defaultBoard[playerData.pos];
+  const settings = gameData.settings || getDefaultGameSettings();
+  const board = getBoard(settings.selectedBoard);
+  const tile = board[playerData.pos];
 
   const ownableId = tile.name;
   const ownableData: Ownable = await fetchOwnableData(ownableId, sessionId);
@@ -619,8 +630,11 @@ export async function cancelTrade(sessionId: string, tradeId: string) {
 export async function goToJail(sessionId: string) {
   const playerId: string = await getPlayerId();
   const playerData: Player = await fetchPlayerData(playerId, sessionId);
+  const gameData: GameData = await fetchGameData(sessionId);
+  const settings = gameData.settings || getDefaultGameSettings();
+  const board = getBoard(settings.selectedBoard);
   playerData.status = "JAIL";
-  playerData.pos = defaultBoard.findIndex((tile) => tile.subtype === "jail");
+  playerData.pos = board.findIndex((tile) => tile.subtype === "jail");
   await updatePlayerData(playerId, sessionId, playerData);
   endPlayersTurn(sessionId, playerId);
 }
@@ -629,9 +643,12 @@ export async function goToNextCardSpace(sessionId: string) {
 
   const playerId: string = await getPlayerId();
   const playerData: Player = await fetchPlayerData(playerId, sessionId);
-  const tile = defaultBoard[playerData.pos];
+  const gameData: GameData = await fetchGameData(sessionId);
+  const settings = gameData.settings || getDefaultGameSettings();
+  const board = getBoard(settings.selectedBoard);
+  const tile = board[playerData.pos];
 
-  const nextCardSpaceIndex = defaultBoard.findIndex(
+  const nextCardSpaceIndex = board.findIndex(
     (tile) => tile.type === "event" && (tile.subtype === "chest" || tile.subtype === "chance") && tile.id > playerData.pos + 1
   );
 

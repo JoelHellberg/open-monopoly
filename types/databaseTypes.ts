@@ -1,12 +1,17 @@
 export type AuctionInfoRTDB = {
   tile: string;
+  participants: string[];
+  phase: "bidding" | "revealed";
+  blindBids: Record<string, number>;
+  bidSubmitted: string[];
   currentBid: number;
   highestBidderId: string;
-  participants: string[];  endTime: number;};
+  endTime: number;
+};
 
 export type GameSettingsRTDB = {
   startingMoney: number;
-  selectedBoard: "default";
+  selectedBoard: "default" | "allownable";
   freeParkingMoney: boolean;
   allowHouseShortage: boolean;
 };

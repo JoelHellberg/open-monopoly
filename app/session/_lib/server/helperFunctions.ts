@@ -8,7 +8,8 @@ import {
   fetchPlayerData,
   updatePlayerData,
 } from "./database";
-import defaultBoard from "@/data/boards/default";
+import { getBoard } from "@/data/boards";
+import { getDefaultGameSettings } from "../gameSettingsConstants";
 
 const jailStatuses = ["JAIL", "JAIL1", "JAIL2", "JAIL3"];
 
@@ -67,7 +68,10 @@ async function assertCanBuyProperty(sessionId: string): Promise<boolean> {
   const playerData: Player = await fetchPlayerData(playerId, sessionId);
   if (playerData.status !== "BUYING") return false;
 
-  const street = defaultBoard[playerData.pos];
+  const gameData: GameData = await fetchGameData(sessionId);
+  const settings = gameData.settings || getDefaultGameSettings();
+  const board = getBoard(settings.selectedBoard);
+  const street = board[playerData.pos];
   const ownableData: Ownable = await fetchOwnableData(street.name, sessionId);
 
   return (
@@ -100,7 +104,10 @@ async function assertCanAuction(sessionId: string): Promise<boolean> {
   // we allow auction if the current tile is an ownable and unowned
   const playerId: string = await getPlayerId();
   const playerData: Player = await fetchPlayerData(playerId, sessionId);
-  const street = defaultBoard[playerData.pos];
+  const gameData: GameData = await fetchGameData(sessionId);
+  const settings = gameData.settings || getDefaultGameSettings();
+  const board = getBoard(settings.selectedBoard);
+  const street = board[playerData.pos];
   if (street.type !== "ownable") return false;
   const ownableData: Ownable = await fetchOwnableData(street.name, sessionId);
   return ownableData.owner === "";
@@ -137,8 +144,11 @@ async function assertCanMortgageProperty(sessionId: string): Promise<boolean> {
 export async function isPropertyForSale(sessionId: string): Promise<boolean> {
   const playerId: string = await getPlayerId();
   const playerData: Player = await fetchPlayerData(playerId, sessionId);
+  const gameData: GameData = await fetchGameData(sessionId);
+  const settings = gameData.settings || getDefaultGameSettings();
+  const board = getBoard(settings.selectedBoard);
 
-  const street = defaultBoard[playerData.pos];
+  const street = board[playerData.pos];
   if (street.type !== "ownable") return false;
 
   const ownableData: Ownable = await fetchOwnableData(street.name, sessionId);
@@ -198,18 +208,18 @@ export async function setPlayersStatus(
   await updatePlayerData(playerId, sessionId, playerData);
 }
 
-export async function calculateRent(ownableData: Ownable, ownerData: Player, playerId: string, diceRoll?: number): Promise<number> {
+export async function calculateRent(ownableData: Ownable, ownerData: Player, playerId: string, diceRoll: number | undefined, board: any[]): Promise<number> {
 
   if (ownableData.mortgaged) return 0;
   if (jailStatuses.includes(ownerData.status)) return 0;
   if (ownableData.freeRent.includes(playerId)) return 0;
 
   if (ownableData.type === "company" && diceRoll) {
-    const companiesOwned = ownerData.ownables.filter(el => defaultBoard.find(tile => tile.name === el)?.subtype === "company").length;
+    const companiesOwned = ownerData.ownables.filter(el => board.find(tile => tile.name === el)?.subtype === "company").length;
     return ownableData.rent[companiesOwned - 1] * diceRoll;
   }
   if (ownableData.type === "transportation") {
-    const transportationOwned = ownerData.ownables.filter(el => defaultBoard.find(tile => tile.name === el)?.subtype === "transportation").length;
+    const transportationOwned = ownerData.ownables.filter(el => board.find(tile => tile.name === el)?.subtype === "transportation").length;
     return ownableData.rent[transportationOwned - 1];
   }
   if (await hasMonopoly(ownableData, ownerData) && ownableData.housesAmount === 0) return ownableData.rent[0] * 2;

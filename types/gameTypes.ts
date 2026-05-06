@@ -2,7 +2,7 @@ import { Timestamp } from "firebase/firestore";
 
 export type GameSettings = {
   startingMoney: number;
-  selectedBoard: "default";
+  selectedBoard: "default" | "allownable";
   freeParkingMoney: boolean;
   allowHouseShortage: boolean;
 };

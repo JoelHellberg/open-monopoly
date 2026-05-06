@@ -2,7 +2,8 @@
 import type { PropertyTile, RailroadTile, UtilityTile } from "@/types/board";
 import { useGameData } from "../_lib/data/gameData";
 import { Ownable, Player } from "@/types/gameTypes";
-import defaultBoard from "@/data/boards/default";
+import { getBoard } from "@/data/boards";
+import { getDefaultGameSettings } from "../_lib/gameSettingsConstants";
 import { sellProperty, mortgageProperty, buyHouse, sellHouse } from "../_lib/server/actions";
 import { useParams } from "next/navigation";
 
@@ -14,6 +15,10 @@ interface Props {
 }
 
 export default function TileInfoPanel({ tile, onClose }: Props) {
+  const gameData = useGameData((state) => state.data);
+  const settings = gameData?.settings || getDefaultGameSettings();
+  const board = getBoard(settings.selectedBoard);
+
   const ownableData = useGameData((state) => state.ownables?.[tile.name]);
   const players = useGameData((state) => state.players);
   const playerId = useGameData((state) => state.ownPlayerId);
@@ -26,8 +31,8 @@ export default function TileInfoPanel({ tile, onClose }: Props) {
       <Header name={tile.name} onClose={onClose} />
 
       {tile.subtype === "property" && <PropertyInfo tile={tile} ownableData={ownableData} ownerData={ownerData} />}
-      {tile.subtype === "transportation" && <RailroadInfo tile={tile} ownableData={ownableData} ownerData={ownerData} />}
-      {tile.subtype === "company" && <UtilityInfo tile={tile} ownableData={ownableData} ownerData={ownerData} />}
+      {tile.subtype === "transportation" && <RailroadInfo tile={tile} ownableData={ownableData} ownerData={ownerData} board={board} />}
+      {tile.subtype === "company" && <UtilityInfo tile={tile} ownableData={ownableData} ownerData={ownerData} board={board} />}
       {ownableData?.owner === playerId && <SellButtons tile={tile} ownableData={ownableData} />}
     </div>
   );
@@ -70,10 +75,10 @@ function PropertyInfo({ tile, ownableData, ownerData }: { tile: PropertyTile, ow
   );
 }
 
-function RailroadInfo({ tile, ownableData, ownerData }: { tile: RailroadTile, ownableData?: Ownable, ownerData?: Player }) {
+function RailroadInfo({ tile, ownableData, ownerData, board }: { tile: RailroadTile, ownableData?: Ownable, ownerData?: Player, board: any[] }) {
   let ownedCount = 0;
   if (ownerData) {
-    ownedCount = ownerData.ownables.filter((name: string) => defaultBoard.find(t => t.name === name)?.subtype === "transportation").length;
+    ownedCount = ownerData.ownables.filter((name: string) => board.find(t => t.name === name)?.subtype === "transportation").length;
   }
   // If nobody owns it, ownedCount is 0, highlight nothing or handled gracefully? 
   // Rent levels are 0-indexed in map (0 => 1 owned, 1 => 2 owned, etc.)
@@ -101,10 +106,10 @@ function RailroadInfo({ tile, ownableData, ownerData }: { tile: RailroadTile, ow
   );
 }
 
-function UtilityInfo({ tile, ownableData, ownerData }: { tile: UtilityTile, ownableData?: Ownable, ownerData?: Player }) {
+function UtilityInfo({ tile, ownableData, ownerData, board }: { tile: UtilityTile, ownableData?: Ownable, ownerData?: Player, board: any[] }) {
   let ownedCount = 0;
   if (ownerData) {
-    ownedCount = ownerData.ownables.filter((name: string) => defaultBoard.find(t => t.name === name)?.subtype === "company").length;
+    ownedCount = ownerData.ownables.filter((name: string) => board.find(t => t.name === name)?.subtype === "company").length;
   }
 
   const activeIndex = ownedCount > 0 && !ownableData?.mortgaged ? ownedCount - 1 : -1;

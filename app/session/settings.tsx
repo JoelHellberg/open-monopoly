@@ -93,21 +93,19 @@ export default function Settings() {
           </label>
         </div> */}
 
-        {/* Selected Board (read-only for now) */}
+        {/* Selected Board (read-only) */}
         <div className="flex flex-col gap-2">
           <label className="font-semibold text-sm">Board</label>
           <select
             value={settings.selectedBoard}
-            onChange={(e) =>
-              handleSettingChange("selectedBoard", e.target.value as "default")
-            }
-            disabled={!isHost || isSaving || true} // Disabled as only default board exists
-            className="px-3 py-2 border rounded-lg bg-white text-black disabled:bg-gray-100 disabled:cursor-not-allowed"
+            disabled
+            className="px-3 py-2 border rounded-lg bg-gray-100 text-black cursor-not-allowed"
           >
             <option value="default">Standard Monopoly Board</option>
+            <option value="allownable">All-Ownable Board</option>
           </select>
           <span className="text-xs text-gray-500">
-            More boards coming soon
+            Board is selected when hosting the game
           </span>
         </div>
 

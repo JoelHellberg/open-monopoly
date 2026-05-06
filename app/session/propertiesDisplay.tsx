@@ -1,12 +1,17 @@
 "use client";
 import { useGameData } from "./_lib/data/gameData";
-import defaultBoard from "@/data/boards/default";
+import { getBoard } from "@/data/boards";
+import { getDefaultGameSettings } from "./_lib/gameSettingsConstants";
 import type { Tile, PropertyTile, RailroadTile, UtilityTile, } from "@/types/board";
 import { propertyColors } from "@/data/colors";
 
 type OwnableTile = PropertyTile | RailroadTile | UtilityTile;
 
 export default function PropertiesDisplay({ onSelectTile }: { onSelectTile: (tile: OwnableTile) => void }) {
+  const gameData = useGameData((state) => state.data);
+  const settings = gameData?.settings || getDefaultGameSettings();
+  const board = getBoard(settings.selectedBoard);
+
   const ownPlayerId: string = useGameData((state) => state.ownPlayerId);
   const playerData = useGameData(
     (state) => state.players?.[ownPlayerId] ?? null
@@ -14,7 +19,7 @@ export default function PropertiesDisplay({ onSelectTile }: { onSelectTile: (til
 
   const ownedNames = new Set(playerData?.ownables ?? []);
 
-  const ownedTiles = defaultBoard.filter(
+  const ownedTiles = board.filter(
     (tile): tile is PropertyTile | RailroadTile | UtilityTile =>
       tile.type === "ownable" && ownedNames.has(tile.name)
   );

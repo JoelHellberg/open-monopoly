@@ -5,7 +5,8 @@ import { off, onValue, ref } from "firebase/database";
 import { GameDataRTDB } from "@/types/databaseTypes";
 import { normalizeGameData } from "./helperFunctions";
 import { rtdb } from "@/app/_lib/firebase";
-import defaultBoard from "@/data/boards/default";
+import { getBoard } from "@/data/boards";
+import { getDefaultGameSettings } from "../gameSettingsConstants";
 import { Ownable } from "@/types/gameTypes";
 import { verifyGameSession } from "@/app/_lib/session";
 
@@ -53,9 +54,12 @@ export function useSessionSubscriptions() {
     });
   }, [sessionId, updateGameData]);
   useEffect(() => {
-    if (!sessionId) return;
+    if (!sessionId || !gameData) return;
 
-    const unsubs = defaultBoard.map((street) => {
+    const settings = gameData.settings || getDefaultGameSettings();
+    const board = getBoard(settings.selectedBoard);
+
+    const unsubs = board.map((street) => {
       const ownableRef = ref(
         rtdb,
         `games/${sessionId}/ownables/${street.name}`
@@ -69,11 +73,11 @@ export function useSessionSubscriptions() {
     });
 
     return () => {
-      defaultBoard.forEach((street) => {
+      board.forEach((street) => {
         off(ref(rtdb, `games/${sessionId}/ownables/${street.name}`));
       });
     };
-  }, [sessionId, updateOwnableData]);
+  }, [sessionId, updateOwnableData, gameData]);
 
   useEffect(() => {
     if (!sessionId || !gameData?.playersInSession.length) return;

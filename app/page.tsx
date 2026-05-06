@@ -1,6 +1,6 @@
 "use client"
 import { hostGame, joinGame } from "./session/_lib/client/setup";
-import defaultBoard from "@/data/boards/default";
+import { getBoard, boardOptions } from "@/data/boards";
 import { useState } from "react";
 
 const COLORS = ["E02B00", "E08A00", "D4E000", "00E048", "00E0B6", "0044E0", "6900E0", "E100A8"];
@@ -9,6 +9,7 @@ export default function Home() {
   const [sessionId, setSessionId] = useState("");
   const [selectedColor, setSelectedColor] = useState(COLORS[0]);
   const [name, setName] = useState("");
+  const [selectedBoard, setSelectedBoard] = useState("default");
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
@@ -39,11 +40,26 @@ export default function Home() {
             </div>
           </div>
 
+          <div className="flex flex-col gap-2">
+            <label className="font-bold">Select Board:</label>
+            <select
+              value={selectedBoard}
+              onChange={(e) => setSelectedBoard(e.target.value)}
+              className="border p-2 rounded"
+            >
+              {boardOptions.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+          </div>
+
           <div className="border-t my-4"></div>
 
           <button
             className="outline p-2 rounded-2xl hover:bg-gray-100 cursor-pointer w-full text-left disabled:opacity-50"
-            onClick={() => hostGame(defaultBoard, selectedColor, name)}
+            onClick={() => hostGame(getBoard(selectedBoard as "default" | "allownable"), selectedColor, name, { selectedBoard: selectedBoard as "default" | "allownable" })}
             disabled={!name}
           >
             Host game

@@ -18,7 +18,8 @@ import {
   dismissAuction,
 } from "../_lib/server/actions";
 import { useParams } from "next/navigation";
-import { defaultBoard, allownableBoard } from "@/data/boards/default";
+import { getBoard } from "@/data/boards";
+import { getDefaultGameSettings } from "../_lib/gameSettingsConstants";
 import type { PropertyTile, RailroadTile, UtilityTile, Tile } from "@/types/board";
 import { useState, useEffect } from "react";
 
@@ -27,9 +28,12 @@ export default function ActionsDisplay() {
   const sessionId = params.sessionId as string;
 
   const gameData = useGameData((state) => state.data);
+  const settings = gameData?.settings || getDefaultGameSettings();
+  const board = getBoard(settings.selectedBoard);
+
   const playerId = useGameData((state) => state.ownPlayerId);
   const playerData = useGameData((state) => state.players?.[playerId] ?? null);
-  const tile = playerData ? defaultBoard[playerData.pos] : null;
+  const tile = playerData ? board[playerData.pos] : null;
 
   const isOwnableTile = (tile: Tile | null): tile is PropertyTile | RailroadTile | UtilityTile => tile?.type === "ownable";
   const cost = isOwnableTile(tile) ? tile.price : 0;
